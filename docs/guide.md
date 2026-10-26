@@ -95,7 +95,7 @@ Onglet **Classes (élèves)**. La liste de vos classes est à gauche : un clic p
 
 ![Fiches des élèves](img/05-classes.png)
 
-Chaque élève est d'abord une **petite fiche** : sa photo, son nom et des pastilles (genre, délégué, suppléant, feu tricolore, annotations), pour voir toute la classe d'un coup d'œil. Le bouton **Modifier** ouvre la fiche complète ; **Replier** la referme.
+Chaque élève est d'abord une **petite fiche** : sa photo, son nom et des pastilles (genre, délégué, suppléant, feu tricolore, annotations), pour voir toute la classe d'un coup d'œil. **Cliquez sur une fiche** pour ouvrir la fiche complète dans une fenêtre ; fermez-la avec Échap ou en cliquant à côté.
 
 Dans la fiche complète, vous pouvez :
 
@@ -111,9 +111,19 @@ Pour ajouter beaucoup d'élèves d'un coup, utilisez **Coller une liste** : une 
 
 Les boutons **Photos fictives** et **Feux aléatoires**, rangés sous **Outils de test**, servent uniquement à faire des essais ; le second remplace les feux de toute la classe (1-2 rouges, 5-6 oranges, le reste vert).
 
+### Le tableau
+
+Le bouton **Tableau**, au-dessus des fiches, affiche la classe sous forme de tableau : une ligne par personne, avec prénom, nom, genre, feu, délégué, suppléant, annotations et note, tous modifiables directement : le feu et le genre se changent d'un clic. Il n'y a qu'**un délégué et un suppléant par classe** : en nommer un nouveau remplace le précédent. C'est le plus rapide pour renseigner toute une classe. Le choix est mémorisé.
+
+![Le tableau des élèves](img/13-tableau.png)
+
+### Notes et ordre des classes
+
+Dans la fiche d'un élève, le champ **Note** accepte du texte libre (allergie, remarque…). Elle se modifie aussi depuis le plan, en cliquant sur l'élève. Elle n'est **jamais dessinée ni imprimée** sur le plan : survolez simplement la fiche, ou l'élève sur le plan, pour la lire. Glissez les classes dans la liste de gauche pour les ranger dans l'ordre que vous voulez.
+
 ### Les AESH
 
-**Ajouter un AESH** crée une personne qui n'est pas un élève (inutile de saisir un nom : elle s'appelle « AESH » jusqu'à ce que vous la renommiez). Les AESH sont rangés dans la section **AESH de la classe**, sous les élèves. Ouvrez sa fiche avec **Modifier** et choisissez les élèves qu'elle accompagne :
+**Ajouter un AESH** crée une personne qui n'est pas un élève (inutile de saisir un nom : elle s'appelle « AESH » jusqu'à ce que vous la renommiez). Les AESH sont rangés dans la section **AESH de la classe**, sous les élèves. Cliquez sur sa fiche et choisissez les élèves qu'elle accompagne :
 
 ![Fiche d'un AESH](img/06-aesh.png)
 

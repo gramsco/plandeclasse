@@ -87,18 +87,21 @@ try {
   await page.getByRole('button', { name: 'Classes (élèves)' }).click()
   await page.getByPlaceholder('Prénom').first().fill('Sam')
   await page.getByRole('button', { name: 'Ajouter un AESH' }).click()
-  await page
-    .locator('.card-aesh')
-    .getByRole('button', { name: /^Modifier/ })
-    .click()
-  await page.locator('.card-aesh summary').click()
-  await page.locator('.card-aesh .checklist input').first().check()
+  await page.locator('.card-aesh .card-head').click()
+  await page.locator('.modal .supports summary').click()
+  await page.locator('.modal .checklist input').first().check()
   await pause()
+  await shot('06-aesh', page.locator('.modal'))
+  await page.keyboard.press('Escape')
   await page.evaluate(() => scrollTo(0, 0))
   await pause(200)
   await shot('05-classes')
-  await page.locator('.card-aesh').scrollIntoViewIfNeeded()
-  await shot('06-aesh', page.locator('.card-aesh'))
+
+  // Table view
+  await page.getByRole('button', { name: 'Tableau' }).click()
+  await pause()
+  await shot('13-tableau')
+  await page.getByRole('button', { name: 'Fiches' }).click()
 
   // Plans: rules and alerts
   await page.getByRole('button', { name: 'Plans' }).click()

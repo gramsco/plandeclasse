@@ -8,7 +8,8 @@ import { ListNav } from './ListNav'
 import { StudentsPanel } from './StudentsPanel'
 
 export function ClassesView() {
-  const { classes, currentClassId, selectClass, renameClass, duplicateClass, deleteClass, plans } = useApp()
+  const { classes, currentClassId, selectClass, renameClass, reorderClasses, duplicateClass, deleteClass, plans } =
+    useApp()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [query, setQuery] = useState('')
   const schoolClass = classes.find((c) => c.id === currentClassId)
@@ -51,6 +52,7 @@ export function ClassesView() {
           label="Classes"
           currentId={currentClassId}
           onSelect={selectClass}
+          onReorder={reorderClasses}
           header={
             <input
               type="search"

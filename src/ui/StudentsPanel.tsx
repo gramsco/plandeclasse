@@ -13,10 +13,16 @@ import { addFakePhotos, generateAvatar } from '../storage/avatar'
 import { matchesSearch } from '../model/search'
 import { resizePhoto } from '../storage/photo'
 import { useApp } from '../store'
-import { askConfirm, askText } from './ask'
-import { Crown, ICON, X } from './icons'
+import { askConfirm } from './ask'
+import { Crown, ICON } from './icons'
+import { AnnotationEditor } from './AnnotationEditor'
+import { StudentsTable } from './StudentsTable'
+import { GenderPicker } from './GenderPicker'
+import { Modal } from './Modal'
 import { NeutralAvatar } from './NeutralAvatar'
 import { TrafficLightPicker } from './TrafficLightPicker'
+
+const VIEW_MODE_KEY = 'studentsViewMode'
 
 const genderSummary = (students: Student[]) => {
   const girls = students.filter((s) => s.gender === 'girl').length
@@ -30,6 +36,13 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
   const [lastName, setLastName] = useState('')
   const [bulkOpen, setBulkOpen] = useState(false)
   const [bulkText, setBulkText] = useState('')
+  const [mode, setMode] = useState<'cards' | 'table'>(() =>
+    localStorage.getItem(VIEW_MODE_KEY) === 'table' ? 'table' : 'cards',
+  )
+  const chooseMode = (next: 'cards' | 'table') => {
+    setMode(next)
+    localStorage.setItem(VIEW_MODE_KEY, next)
+  }
   const students = schoolClass.students.filter((s) => !isAesh(s))
   const aesh = schoolClass.students.filter(isAesh)
   const shownStudents = students.filter((s) => matchesSearch(fullName(s), query))
@@ -119,15 +132,32 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
           </button>
         </div>
       )}
+      <div className="view-switch" role="group" aria-label="Affichage">
+        <button
+          aria-pressed={mode === 'cards'}
+          className={mode === 'cards' ? 'active' : ''}
+          onClick={() => chooseMode('cards')}
+        >
+          Fiches
+        </button>
+        <button
+          aria-pressed={mode === 'table'}
+          className={mode === 'table' ? 'active' : ''}
+          onClick={() => chooseMode('table')}
+        >
+          Tableau
+        </button>
+      </div>
+      {mode === 'table' && shownStudents.length + shownAesh.length > 0 && (
+        <StudentsTable students={[...shownStudents, ...shownAesh]} />
+      )}
       <ul className="student-grid">
-        {shownStudents.map((s) => (
-          <StudentCard key={s.id} student={s} schoolClass={schoolClass} />
-        ))}
+        {mode === 'cards' && shownStudents.map((s) => <StudentCard key={s.id} student={s} schoolClass={schoolClass} />)}
       </ul>
       {query.trim() && shownStudents.length + shownAesh.length === 0 && (
         <p className="empty">Personne ne correspond à « {query.trim()} » dans cette classe.</p>
       )}
-      {(shownAesh.length > 0 || !query.trim()) && (
+      {mode === 'cards' && (shownAesh.length > 0 || !query.trim()) && (
         <>
           <h3>AESH de la classe</h3>
           {shownAesh.length === 0 && <p className="hint">Aucun AESH. Utilisez « Ajouter un AESH » ci-dessus.</p>}
@@ -154,7 +184,6 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
     setDelegate,
     setDeputy,
     setSupports,
-    toggleAnnotation,
   } = useApp()
   const [open, setOpen] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -174,14 +203,15 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
     .filter((s): s is Student => Boolean(s))
 
   return (
-    <li
-      className={`card ${aesh ? 'card-aesh' : ''} ${open ? 'open' : ''}`}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
-    >
-      <div className="card-head">
+    <li className={`card ${aesh ? 'card-aesh' : ''}`} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+      <button
+        type="button"
+        className="card-head"
+        aria-label={`Modifier ${fullName(student) || 'cette fiche'}`}
+        onClick={() => setOpen(true)}
+      >
         <span className="mini-avatar">{photoUrl ? <img src={photoUrl} alt="" /> : <NeutralAvatar />}</span>
-        <div className="card-summary">
+        <span className="card-summary">
           <strong>{fullName(student) || 'Sans nom'}</strong>
           <span className="tags">
             {aesh && <span className="tag tag-aesh">AESH</span>}
@@ -201,170 +231,136 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
                 <i className={`dot light-${student.light}`} /> {TRAFFIC_LIGHT_LABELS[student.light]}
               </span>
             )}
+            {student.note && <span className="tag">Note</span>}
             {student.annotations.map((label) => (
               <span key={label} className="tag tag-note" title={COMMON_ANNOTATIONS[label] ?? label}>
                 {label}
               </span>
             ))}
           </span>
+        </span>
+      </button>
+      {!open && student.note && (
+        <div className="card-popover" role="tooltip">
+          {student.note}
         </div>
-        <button
-          aria-expanded={open}
-          aria-label={`${open ? 'Replier' : 'Modifier'} ${fullName(student) || 'cette fiche'}`}
-          onClick={() => setOpen(!open)}
-        >
-          {open ? 'Replier' : 'Modifier'}
-        </button>
-      </div>
+      )}
       {open && (
-        <div className="card-body">
-          <button
-            className="photo"
-            title="Choisir une photo (ou glisser un fichier)"
-            onClick={() => fileInput.current?.click()}
-          >
-            {photoUrl ? <img src={photoUrl} alt="" /> : <NeutralAvatar />}
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => void receivePhoto(e.target.files?.[0])}
-          />
-          <input
-            aria-label="Prénom"
-            value={student.firstName}
-            onChange={(e) => updateStudent(student.id, { firstName: e.target.value })}
-          />
-          <input
-            aria-label="Nom"
-            value={student.lastName}
-            onChange={(e) => updateStudent(student.id, { lastName: e.target.value })}
-          />
-          {aesh ? (
-            <details className="supports">
-              <summary>
-                {supported.length
-                  ? `Accompagne : ${supported.map((s) => s.firstName).join(', ')}`
-                  : 'Choisir les élèves accompagnés'}
-              </summary>
-              <div className="checklist">
-                {schoolClass.students
-                  .filter((s) => !isAesh(s))
-                  .map((s) => (
-                    <label key={s.id} className="check">
-                      <input
-                        type="checkbox"
-                        checked={student.supports.includes(s.id)}
-                        onChange={(e) =>
-                          setSupports(
-                            student.id,
-                            e.target.checked
-                              ? [...student.supports, s.id]
-                              : student.supports.filter((id) => id !== s.id),
-                          )
-                        }
-                      />
-                      {fullName(s)}
-                    </label>
-                  ))}
-              </div>
-            </details>
-          ) : (
-            <>
-              <div className="gender-picker" role="radiogroup" aria-label="Genre">
-                {(['girl', 'boy'] as const).map((gender) => (
-                  <button
-                    key={gender}
-                    role="radio"
-                    aria-checked={student.gender === gender}
-                    className={student.gender === gender ? 'active' : ''}
-                    onClick={() => setGender(student.id, student.gender === gender ? undefined : gender)}
-                  >
-                    {gender === 'girl' ? 'Fille' : 'Garçon'}
-                  </button>
-                ))}
-              </div>
-              <button
-                role="switch"
-                aria-checked={student.delegate}
-                className={`delegate-toggle ${student.delegate ? 'active' : ''}`}
-                title="Délégué de la classe"
-                onClick={() => setDelegate(student.id, !student.delegate)}
-              >
-                <Crown size={ICON} /> Délégué
-              </button>
-              <button
-                role="switch"
-                aria-checked={student.deputy}
-                className={`delegate-toggle deputy ${student.deputy ? 'active' : ''}`}
-                title="Suppléant du délégué de la classe"
-                onClick={() => setDeputy(student.id, !student.deputy)}
-              >
-                Suppléant
-              </button>
-              <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
-            </>
-          )}
-          {!aesh && (
-            <div className="annotations">
-              {student.annotations.map((label) => (
+        <Modal title={fullName(student) || 'Fiche'} wide onClose={() => setOpen(false)}>
+          <div className="card-body student-edit">
+            <button
+              className="photo"
+              title="Choisir une photo (ou glisser un fichier)"
+              onClick={() => fileInput.current?.click()}
+            >
+              {photoUrl ? <img src={photoUrl} alt="" /> : <NeutralAvatar />}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => void receivePhoto(e.target.files?.[0])}
+            />
+            <input
+              aria-label="Prénom"
+              value={student.firstName}
+              onChange={(e) => updateStudent(student.id, { firstName: e.target.value })}
+            />
+            <input
+              aria-label="Nom"
+              value={student.lastName}
+              onChange={(e) => updateStudent(student.id, { lastName: e.target.value })}
+            />
+            {aesh ? (
+              <details className="supports">
+                <summary>
+                  {supported.length
+                    ? `Accompagne : ${supported.map((s) => s.firstName).join(', ')}`
+                    : 'Choisir les élèves accompagnés'}
+                </summary>
+                <div className="checklist">
+                  {schoolClass.students
+                    .filter((s) => !isAesh(s))
+                    .map((s) => (
+                      <label key={s.id} className="check">
+                        <input
+                          type="checkbox"
+                          checked={student.supports.includes(s.id)}
+                          onChange={(e) =>
+                            setSupports(
+                              student.id,
+                              e.target.checked
+                                ? [...student.supports, s.id]
+                                : student.supports.filter((id) => id !== s.id),
+                            )
+                          }
+                        />
+                        {fullName(s)}
+                      </label>
+                    ))}
+                </div>
+              </details>
+            ) : (
+              <>
+                <GenderPicker value={student.gender} onChange={(gender) => setGender(student.id, gender)} />
                 <button
-                  key={label}
-                  className="annotation-chip"
-                  title={`${COMMON_ANNOTATIONS[label] ?? label} — cliquer pour retirer`}
-                  onClick={() => toggleAnnotation(student.id, label)}
+                  role="switch"
+                  aria-checked={student.delegate}
+                  className={`delegate-toggle ${student.delegate ? 'active' : ''}`}
+                  title="Délégué de la classe"
+                  onClick={() => setDelegate(student.id, !student.delegate)}
                 >
-                  {label} <X size={12} />
+                  <Crown size={ICON} /> Délégué
                 </button>
-              ))}
-              <select
-                aria-label="Ajouter une annotation"
-                value=""
-                onChange={async (e) => {
-                  const label =
-                    e.target.value === '__other'
-                      ? (await askText('Nouvelle annotation', 'Annotation'))?.toUpperCase()
-                      : e.target.value
-                  if (label && !student.annotations.includes(label)) toggleAnnotation(student.id, label)
+                <button
+                  role="switch"
+                  aria-checked={student.deputy}
+                  className={`delegate-toggle deputy ${student.deputy ? 'active' : ''}`}
+                  title="Suppléant du délégué de la classe"
+                  onClick={() => setDeputy(student.id, !student.deputy)}
+                >
+                  Suppléant
+                </button>
+                <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
+              </>
+            )}
+            {!aesh && <AnnotationEditor student={student} />}
+            <label className="note-field">
+              Note (visible ici seulement, jamais sur le plan)
+              <textarea
+                rows={3}
+                value={student.note}
+                onChange={(e) => updateStudent(student.id, { note: e.target.value })}
+              />
+            </label>
+            <div className="actions">
+              <button
+                title="Dessine un visage au hasard à la place de la photo"
+                onClick={async () => {
+                  if (
+                    photoUrl &&
+                    !(await askConfirm('Remplacer la photo ?', {
+                      message: 'La photo actuelle sera remplacée par un avatar au hasard.',
+                      confirmLabel: 'Remplacer',
+                    }))
+                  )
+                    return
+                  await setPhoto(
+                    student.id,
+                    await generateAvatar(Math.floor(Math.random() * 1_000_000), student.gender),
+                  )
                 }}
               >
-                <option value="">+ Annotation</option>
-                {Object.entries(COMMON_ANNOTATIONS)
-                  .filter(([label]) => !student.annotations.includes(label))
-                  .map(([label, meaning]) => (
-                    <option key={label} value={label}>
-                      {label} — {meaning}
-                    </option>
-                  ))}
-                <option value="__other">Autre…</option>
-              </select>
+                Avatar au hasard
+              </button>
+              {photoUrl && <button onClick={() => removePhoto(student.id)}>Retirer la photo</button>}
+              <button className="danger" onClick={() => deleteStudent(student.id)}>
+                Supprimer
+              </button>
             </div>
-          )}
-          <div className="actions">
-            <button
-              title="Dessine un visage au hasard à la place de la photo"
-              onClick={async () => {
-                if (
-                  photoUrl &&
-                  !(await askConfirm('Remplacer la photo ?', {
-                    message: 'La photo actuelle sera remplacée par un avatar au hasard.',
-                    confirmLabel: 'Remplacer',
-                  }))
-                )
-                  return
-                await setPhoto(student.id, await generateAvatar(Math.floor(Math.random() * 1_000_000), student.gender))
-              }}
-            >
-              Avatar au hasard
-            </button>
-            {photoUrl && <button onClick={() => removePhoto(student.id)}>Retirer la photo</button>}
-            <button className="danger" onClick={() => deleteStudent(student.id)}>
-              Supprimer
-            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </li>
   )

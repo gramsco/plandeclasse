@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type SVGProps } from 'react'
 import { analyze } from '../model/analysis'
 import { CARD, PHOTO, roomSeats, seatCenter } from '../model/geometry'
 import { matchesFilter, STUDENT_FILTER_LABELS, STUDENT_FILTERS, type StudentFilter } from '../model/filters'
@@ -62,6 +62,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [filter, setFilter] = useState<StudentFilter>()
   const [printOpen, setPrintOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string>()
+  const [tip, setTip] = useState<{ student: Student; x: number; y: number }>()
   useEffect(() => savePrintOptions(options), [options])
   useEffect(() => localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'), [collapsed])
   const otherRooms = rooms.filter((r) => r.id !== room.id)
@@ -100,6 +101,12 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   }
 
   const dragging = drag !== undefined
+  // Pointer handlers that show the tooltip of a student (its note included, which is never drawn on the plan).
+  const hoverProps = (student: Student) => ({
+    onPointerEnter: (e: PointerEvent) => setTip({ student, x: e.clientX, y: e.clientY }),
+    onPointerMove: (e: PointerEvent) => setTip({ student, x: e.clientX, y: e.clientY }),
+    onPointerLeave: () => setTip(undefined),
+  })
   const dragRef = useRef(drag)
   useEffect(() => {
     dragRef.current = drag
@@ -205,6 +212,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                         key={s.id}
                         className={`student-chip ${s.id === selectedId ? 'selected' : ''}`}
                         onPointerDown={(e) => startDrag(e, s.id)}
+                        {...hoverProps(s)}
                       >
                         <Avatar student={s} url={photoUrl(s)} />
                         <span>{fullName(s)}</span>
@@ -326,6 +334,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                         selected={student.id === selectedId}
                         dimmed={focus ? !focus.has(student.id) : false}
                         onPointerDown={(e) => startDrag(e, student.id)}
+                        hover={hoverProps(student)}
                       />
                     )}
                   </g>
@@ -356,6 +365,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
         </RoomSvg>
         <Legend />
       </div>
+      {tip && !dragging && <StudentTooltip {...tip} />}
 
       {printOpen && (
         <PrintDialog
@@ -392,6 +402,7 @@ type StudentCardProps = {
   selected: boolean
   dimmed: boolean
   onPointerDown(e: PointerEvent): void
+  hover?: Pick<SVGProps<SVGGElement>, 'onPointerEnter' | 'onPointerMove' | 'onPointerLeave'>
 }
 
 /** The card drawn on an occupied seat. The `opt-*` classes mark what the print options can hide. */
@@ -405,25 +416,16 @@ function StudentCard({
   selected,
   dimmed,
   onPointerDown,
+  hover,
 }: StudentCardProps) {
   const aesh = isAesh(student)
   return (
     <g
       className={`card-svg ${isDragged ? 'ghost' : ''} ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''}`}
       onPointerDown={onPointerDown}
+      {...hover}
     >
       <rect className="card-bg" width={CARD.w} height={CARD.h} rx={10} />
-      <title>
-        {[
-          fullName(student),
-          student.delegate && 'délégué',
-          student.deputy && 'suppléant',
-          student.gender && GENDER_LABELS[student.gender],
-          ...student.annotations,
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-      </title>
       {photoUrl ? (
         <image
           className="opt-photo"
@@ -514,6 +516,23 @@ function StudentCard({
   )
 }
 
+/** Hover card of a student: the free note is shown here only, on screen, never in the drawing or in print. */
+function StudentTooltip({ student, x, y }: { student: Student; x: number; y: number }) {
+  const facts = [
+    isAesh(student) ? 'AESH' : student.gender && GENDER_LABELS[student.gender],
+    student.delegate && 'délégué',
+    student.deputy && 'suppléant',
+    ...student.annotations,
+  ].filter(Boolean)
+  return (
+    <div className="plan-tooltip no-print" role="tooltip" style={{ left: x + 14, top: y + 14 }}>
+      <strong>{fullName(student)}</strong>
+      {facts.length > 0 && <span>{facts.join(' · ')}</span>}
+      {student.note && <p>{student.note}</p>}
+    </div>
+  )
+}
+
 type StudentDetailsProps = {
   student: Student
   photoUrl?: string
@@ -524,7 +543,7 @@ type StudentDetailsProps = {
 
 /** Details and quick actions for the student clicked on the plan. Changes apply to the class, so to every plan. */
 function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: StudentDetailsProps) {
-  const { setDelegate, setDeputy, setLight } = useApp()
+  const { setDelegate, setDeputy, setLight, updateStudent } = useApp()
   const aesh = isAesh(student)
   return (
     <section className="student-details" aria-label={`Détails de ${fullName(student)}`}>
@@ -567,6 +586,10 @@ function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: Studen
           <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
         </>
       )}
+      <label className="note-field">
+        Note (jamais imprimée)
+        <textarea rows={3} value={student.note} onChange={(e) => updateStudent(student.id, { note: e.target.value })} />
+      </label>
       {seated && <button onClick={onUnseat}>Retirer de sa place</button>}
     </section>
   )

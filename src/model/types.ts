@@ -25,6 +25,7 @@ export type Student = {
   lastName: string
   photoId?: string
   annotations: string[] // free-form labels such as PAP, PPS, DYS…
+  note: string // free text for the teacher; never drawn on the plan
   light: TrafficLight
   gender?: Gender // unset until the user picks one
   delegate: boolean // class representative (shown with a gold crown)
@@ -97,6 +98,7 @@ export const newStudent = (firstName: string, lastName = ''): Student => ({
   firstName,
   lastName,
   annotations: [],
+  note: '',
   light: 'green',
   delegate: false,
   deputy: false,
@@ -139,6 +141,7 @@ export const normalizeStudent = (s: any): Student => ({
   lastName: String(s.lastName ?? ''),
   photoId: s.photoId ? String(s.photoId) : undefined,
   annotations: Array.isArray(s.annotations) ? s.annotations.map(String) : [],
+  note: String(s.note ?? ''),
   light: TRAFFIC_LIGHTS.includes(s.light) ? s.light : 'green',
   gender: s.gender === 'girl' || s.gender === 'boy' ? s.gender : undefined,
   delegate: s.delegate === true,

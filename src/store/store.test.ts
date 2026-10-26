@@ -27,6 +27,24 @@ describe('parseStudentList', () => {
 })
 
 describe('students and classes', () => {
+  it('keeps the order of the classes after a reload', async () => {
+    const { get, storage } = await newStore()
+    const [first, second, third] = ['A', 'B', 'C'].map((name) => get().addClass(name))
+    get().reorderClasses(third, first)
+    expect(get().classes.map((c) => c.name)).toEqual(['C', 'A', 'B'])
+    await flush()
+    const reloaded = await newStore(storage)
+    expect(reloaded.get().classes.map((c) => c.id)).toEqual([third, first, second])
+  })
+
+  it('stores the note of a student', async () => {
+    const { get } = await newStore()
+    get().addClass('A', 1)
+    const [student] = get().classes[0].students
+    get().updateStudent(student.id, { note: 'Sits near the window' })
+    expect(get().classes[0].students[0].note).toBe('Sits near the window')
+  })
+
   it('deletes photos with the student and persists changes', async () => {
     const { storage, get } = await newStore()
     get().addClass('6e A')
@@ -136,6 +154,21 @@ describe('plans and rooms', () => {
     get().setDelegate(first.id, true)
     expect(get().classes[0].students.map((s) => s.delegate)).toEqual([true, false])
     expect(second.delegate).toBe(false)
+  })
+
+  it('a class has a single delegate and a single deputy', async () => {
+    const { get } = await newStore()
+    get().addClass('A', 3)
+    const [first, second, third] = get().classes[0].students
+    get().setDelegate(first.id, true)
+    get().setDelegate(second.id, true)
+    get().setDeputy(third.id, true)
+    get().setDeputy(first.id, true)
+    expect(get().classes[0].students.map((s) => [s.delegate, s.deputy])).toEqual([
+      [false, true],
+      [true, false],
+      [false, false],
+    ])
   })
 
   it('a student cannot be both delegate and deputy', async () => {

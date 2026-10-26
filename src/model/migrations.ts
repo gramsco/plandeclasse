@@ -9,8 +9,9 @@
  *  4: V3 — students can be class representatives (`delegate`)
  *  5: V4 — students can be deputy class representatives (`deputy`)
  *  6: rules of type `together` (older releases would silently drop them)
+ *  7: free-text `note` on students
  */
-export const DATA_VERSION = 6
+export const DATA_VERSION = 7
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -147,6 +148,15 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
 
   // Only a new kind of rule: nothing to rewrite. The bump makes older builds refuse the data instead of dropping it.
   5: (d) => d,
+
+  6: (d) => ({
+    classes: (d.classes as any[]).map((c) => ({
+      ...c,
+      students: (c.students ?? []).map((s: any) => ({ ...s, note: '' })),
+    })),
+    rooms: d.rooms,
+    plans: d.plans,
+  }),
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

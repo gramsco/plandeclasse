@@ -3,6 +3,23 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.9.0 — 2026-10-26
+
+- **Nouvelle couleur** : l'application passe du vert à l'indigo. Les feux tricolores gardent leurs couleurs.
+- **Classes dans l'ordre que vous voulez** : glissez une classe dans la liste de gauche pour la déplacer (ou
+  Alt + flèches au clavier). L'ordre est conservé.
+- **Note libre sur chaque élève** : un texte que vous seul voyez, jamais dessiné ni imprimé sur le plan. Elle se
+  modifie depuis la classe ou depuis le plan.
+- **Notes visibles au survol** : passez la souris sur un élève, dans la classe ou sur le plan, pour lire sa note sans
+  rien ouvrir.
+- **Fiches plus simples** : un clic sur la fiche d'un élève ouvre sa fiche complète, sans « Modifier / Replier » ni
+  grille qui se décale.
+- **Vue en tableau** : dans la classe, le bouton « Tableau » affiche tous les élèves en lignes, pour modifier d'un
+  coup genre, feu, délégué, suppléant, annotations et note.
+- **Photo depuis le tableau** : un clic sur la photo d'un élève, dans le tableau, ouvre le choix du fichier.
+- **Un seul délégué et un seul suppléant par classe** : en nommer un nouveau remplace le précédent.
+- **Impression corrigée** : le plan tient de nouveau sur une seule page (la liste des plans s'imprimait par erreur).
+
 ## 0.8.0 — 2026-10-26
 
 - **Fenêtres plus modernes** : plus de boîtes grises du navigateur pour renommer, supprimer ou remplacer. Les

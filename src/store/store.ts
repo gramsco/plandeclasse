@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { base64ToBlob, type ExportFile } from '../io/file'
 import { demoClass, shuffleLights } from '../model/demo'
+import { moveItem, sortByIds } from '../model/order'
 import { footprint, snap } from '../model/geometry'
 import { DATA_VERSION, migrate, toRawData } from '../model/migrations'
 import {
@@ -40,6 +41,7 @@ export type View = 'plans' | 'classes' | 'rooms' | 'help'
 /** Meta keys. The `versionDonnees` key is the one older releases read: keep writing it so that they refuse newer data. */
 const META_DATA_VERSION = 'dataVersion'
 const META_LEGACY_DATA_VERSION = 'versionDonnees'
+const META_CLASS_ORDER = 'classOrder'
 const META_BACKUP = 'preMigrationBackup'
 
 type State = {
@@ -66,6 +68,8 @@ type Actions = {
   duplicateClass(id: string): Promise<void>
   deleteClass(id: string): void
   selectClass(id: string): void
+  /** Drops the class `fromId` onto `toId`; the order is kept across sessions. */
+  reorderClasses(fromId: string, toId: string): void
   addStudents(students: Student[]): void
   addStudent(firstName: string, lastName: string): void
   addAesh(firstName: string, lastName: string): void
@@ -76,7 +80,7 @@ type Actions = {
   shuffleLights(): void
   toggleAnnotation(id: string, label: string): void
   setSupports(aeshId: string, studentIds: string[]): void
-  updateStudent(id: string, patch: Partial<Pick<Student, 'firstName' | 'lastName'>>): void
+  updateStudent(id: string, patch: Partial<Pick<Student, 'firstName' | 'lastName' | 'note'>>): void
   deleteStudent(id: string): void
   setPhoto(studentId: string, blob: Blob): Promise<void>
   removePhoto(studentId: string): void
@@ -263,7 +267,8 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           }
           await storage.setMeta(META_DATA_VERSION, DATA_VERSION)
           await storage.setMeta(META_LEGACY_DATA_VERSION, DATA_VERSION)
-          const classes = data.classes.map(normalizeClass)
+          const classOrder = (await storage.getMeta<string[]>(META_CLASS_ORDER)) ?? []
+          const classes = sortByIds(data.classes.map(normalizeClass), classOrder)
           const rooms = data.rooms.map(normalizeRoom)
           const plans = data.plans.map(normalizePlan)
           set({
@@ -303,6 +308,15 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       },
       renameClass: (id, name) => updateClass(id, (c) => ({ ...c, name })),
       selectClass: (id) => set({ currentClassId: id }),
+      reorderClasses(fromId, toId) {
+        const classes = moveItem(get().classes, fromId, toId)
+        if (classes === get().classes) return
+        set({ classes })
+        void storage.setMeta(
+          META_CLASS_ORDER,
+          classes.map((c) => c.id),
+        )
+      },
 
       async duplicateClass(id) {
         const source = get().classes.find((c) => c.id === id)
@@ -375,12 +389,21 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       setDelegate: (id, delegate) =>
         updateCurrentClass((c) => ({
           ...c,
-          students: c.students.map((s) => (s.id === id ? { ...s, delegate, deputy: delegate ? false : s.deputy } : s)),
+          // A class has a single delegate: naming a new one relieves the previous one.
+          students: c.students.map((s) =>
+            s.id === id
+              ? { ...s, delegate, deputy: delegate ? false : s.deputy }
+              : { ...s, delegate: delegate ? false : s.delegate },
+          ),
         })),
       setDeputy: (id, deputy) =>
         updateCurrentClass((c) => ({
           ...c,
-          students: c.students.map((s) => (s.id === id ? { ...s, deputy, delegate: deputy ? false : s.delegate } : s)),
+          students: c.students.map((s) =>
+            s.id === id
+              ? { ...s, deputy, delegate: deputy ? false : s.delegate }
+              : { ...s, deputy: deputy ? false : s.deputy },
+          ),
         })),
       setSupports: (aeshId, studentIds) =>
         updateCurrentClass((c) => ({

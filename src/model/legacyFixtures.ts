@@ -168,3 +168,14 @@ export const LEGACY_V5 = {
     },
   ],
 }
+
+/** Data version 6 (rules of type "together", before the free-text note of students). */
+export const LEGACY_V6 = {
+  ...LEGACY_V5,
+  plans: [
+    {
+      ...LEGACY_V5.plans[0],
+      rules: [...LEGACY_V5.plans[0].rules, { id: 'r3', type: 'together', students: ['e1', 'e2'] }],
+    },
+  ],
+}
