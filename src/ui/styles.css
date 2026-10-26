@@ -1108,3 +1108,38 @@ footer .link-button {
 .release-notes h1 {
   display: none; /* the dialog already has a title */
 }
+
+/* ---- Putting students forward (hover on a rule, quick filters) ---- */
+.card-svg {
+  transition: opacity 0.15s;
+}
+.card-svg.dimmed {
+  opacity: 0.2;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.filters button {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+}
+.filters button.active {
+  background: #e8eefb;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.canvas-area.preview-mode .filters {
+  display: none;
+}
+@media print {
+  .card-svg.dimmed {
+    opacity: 1;
+  }
+}

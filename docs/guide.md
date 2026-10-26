@@ -176,6 +176,8 @@ Les alertes apparaissent à gauche, et des traits relient les élèves concerné
 - **Orange (attention)** : devant ou derrière, en diagonale, ou de l'autre côté d'une allée ; AESH non placé.
 - **Bleu (info)** : un feu a changé à cause d'une règle.
 
+**Survolez une règle ou une alerte** : les élèves concernés restent bien visibles, les autres s'estompent. Au-dessus du plan, les boutons **Mettre en avant** (délégués, AESH, filles, garçons, couleurs) font la même chose ; recliquez pour désactiver. Rien de cela n'est imprimé.
+
 Les règles sont propres à chaque plan et se copient avec lui. Les traits d'alerte ne sont **jamais imprimés**.
 
 ### Hypothèses : essayer, éprouver, recommencer

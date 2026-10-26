@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type PointerEvent } from 'react'
 import { analyze } from '../model/analysis'
 import { CARD, PHOTO, roomSeats, seatCenter } from '../model/geometry'
+import { matchesFilter, STUDENT_FILTER_LABELS, STUDENT_FILTERS, type StudentFilter } from '../model/filters'
 import { FILL_STRATEGY_LABELS, type FillStrategy } from '../model/plan'
 import {
   fullName,
@@ -51,6 +52,8 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === '1')
   const [strategy, setStrategy] = useState<FillStrategy>('random')
   const [otherRoomId, setOtherRoomId] = useState('')
+  const [hovered, setHovered] = useState<string[]>()
+  const [filter, setFilter] = useState<StudentFilter>()
   useEffect(() => savePrintOptions(options), [options])
   useEffect(() => localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'), [collapsed])
   const otherRooms = rooms.filter((r) => r.id !== room.id)
@@ -68,6 +71,18 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
       }),
     )
   }, [plan.assignments, room])
+  // Hovering a rule or an alert wins over the filter; no focus at all means nobody is dimmed.
+  const focus = previewMode
+    ? undefined
+    : hovered
+      ? new Set(hovered)
+      : filter
+        ? new Set(
+            schoolClass.students
+              .filter((s) => matchesFilter(s, filter, analysis.effectiveLight[s.id]))
+              .map((s) => s.id),
+          )
+        : undefined
   const problemCount = analysis.alerts.filter((a) => a.level !== 'info').length
 
   const startDrag = (e: PointerEvent, studentId: string) => {
@@ -230,13 +245,28 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
               </>
             )}
 
-            {tab === 'rules' && <RulesPanel plan={plan} schoolClass={schoolClass} alerts={analysis.alerts} />}
+            {tab === 'rules' && (
+              <RulesPanel plan={plan} schoolClass={schoolClass} alerts={analysis.alerts} onHighlight={setHovered} />
+            )}
             {tab === 'tracking' && <TrackingPanel plan={plan} />}
           </>
         )}
       </aside>
 
       <div className={canvasClassName(options, flipped, previewMode)}>
+        <div className="filters no-print" role="group" aria-label="Mettre en avant">
+          <span>Mettre en avant :</span>
+          {STUDENT_FILTERS.map((key) => (
+            <button
+              key={key}
+              aria-pressed={filter === key}
+              className={filter === key ? 'active' : ''}
+              onClick={() => setFilter(filter === key ? undefined : key)}
+            >
+              {STUDENT_FILTER_LABELS[key]}
+            </button>
+          ))}
+        </div>
         <h2 className="print-title">{plan.name}</h2>
         <RoomSvg room={room}>
           {room.furniture.flatMap((furniture) =>
@@ -263,6 +293,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                         light={light}
                         worsened={Boolean(worsened)}
                         isDragged={drag?.studentId === student.id}
+                        dimmed={focus ? !focus.has(student.id) : false}
                         onPointerDown={(e) => startDrag(e, student.id)}
                       />
                     )}
@@ -312,14 +343,24 @@ type StudentCardProps = {
   light?: TrafficLight
   worsened: boolean
   isDragged: boolean
+  dimmed: boolean
   onPointerDown(e: PointerEvent): void
 }
 
 /** The card drawn on an occupied seat. The `opt-*` classes mark what the print options can hide. */
-function StudentCard({ student, photoUrl, ringColor, light, worsened, isDragged, onPointerDown }: StudentCardProps) {
+function StudentCard({
+  student,
+  photoUrl,
+  ringColor,
+  light,
+  worsened,
+  isDragged,
+  dimmed,
+  onPointerDown,
+}: StudentCardProps) {
   const aesh = isAesh(student)
   return (
-    <g className={`card-svg ${isDragged ? 'ghost' : ''}`} onPointerDown={onPointerDown}>
+    <g className={`card-svg ${isDragged ? 'ghost' : ''} ${dimmed ? 'dimmed' : ''}`} onPointerDown={onPointerDown}>
       <rect className="card-bg" width={CARD.w} height={CARD.h} rx={10} />
       <title>
         {[

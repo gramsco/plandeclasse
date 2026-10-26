@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Alert } from '../model/analysis'
+import { ruleStudentIds } from '../model/filters'
 import {
   fullName,
   isAesh,
@@ -20,9 +21,19 @@ function describeRule(rule: Rule, byId: Map<string, Student>) {
   return `${name(rule.student)} devient ${COLOR_NAME[rule.becomes]} près de ${name(rule.near)}`
 }
 
+type Props = {
+  plan: Plan
+  schoolClass: SchoolClass
+  alerts: Alert[]
+  /** Called with the students to put forward while a rule or an alert is hovered (undefined when not). */
+  onHighlight(ids: string[] | undefined): void
+}
+
 /** Alerts of the plan and the rules that produce them. */
-export function RulesPanel({ plan, schoolClass, alerts }: { plan: Plan; schoolClass: SchoolClass; alerts: Alert[] }) {
+export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
   const { addRule, deleteRule } = useApp()
+  // Nothing stays put forward once the panel is gone (a hovered row can disappear without a mouseleave).
+  useEffect(() => () => onHighlight(undefined), [onHighlight])
   const students = schoolClass.students.filter((s) => !isAesh(s))
   const byId = new Map(schoolClass.students.map((s) => [s.id, s]))
   const [type, setType] = useState<Rule['type']>('separate')
@@ -77,7 +88,15 @@ export function RulesPanel({ plan, schoolClass, alerts }: { plan: Plan; schoolCl
       {alerts.length === 0 && <p className="hint">Aucune alerte ✔</p>}
       <ul className="alerts">
         {alerts.map((alert) => (
-          <li key={alert.id} className={`alert ${alert.level}`}>
+          <li
+            key={alert.id}
+            className={`alert ${alert.level}`}
+            tabIndex={0}
+            onMouseEnter={() => onHighlight(alert.studentIds)}
+            onMouseLeave={() => onHighlight(undefined)}
+            onFocus={() => onHighlight(alert.studentIds)}
+            onBlur={() => onHighlight(undefined)}
+          >
             {alert.message}
           </li>
         ))}
@@ -86,9 +105,22 @@ export function RulesPanel({ plan, schoolClass, alerts }: { plan: Plan; schoolCl
       <h3>Règles de ce plan</h3>
       <ul className="rules">
         {plan.rules.map((rule) => (
-          <li key={rule.id}>
+          <li
+            key={rule.id}
+            onMouseEnter={() => onHighlight(ruleStudentIds(rule, schoolClass))}
+            onMouseLeave={() => onHighlight(undefined)}
+            onFocus={() => onHighlight(ruleStudentIds(rule, schoolClass))}
+            onBlur={() => onHighlight(undefined)}
+          >
             <span>{describeRule(rule, byId)}</span>
-            <button className="danger" aria-label="Supprimer la règle" onClick={() => deleteRule(plan.id, rule.id)}>
+            <button
+              className="danger"
+              aria-label="Supprimer la règle"
+              onClick={() => {
+                onHighlight(undefined)
+                deleteRule(plan.id, rule.id)
+              }}
+            >
               ✕
             </button>
           </li>

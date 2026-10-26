@@ -37,10 +37,10 @@ export function bumpVersion(version, kind) {
   return `${major}.${minor}.${patch}`
 }
 
-/** Adds the heading of a new version (with the commit subject) on top of the release notes. */
-export function addReleaseNote(notes, version, date, subject) {
+/** Adds the heading of a new version on top of the release notes, with a French placeholder to rewrite. */
+export function addReleaseNote(notes, version, date) {
   if (new RegExp(`^## ${version.replaceAll('.', '\\.')}\\b`, 'm').test(notes)) return notes
-  const entry = `## ${version} — ${date}\n\n- ${subject}\n\n`
+  const entry = `## ${version} — ${date}\n\n- (à rédiger)\n\n`
   const firstVersion = notes.search(/^## /m)
   return firstVersion === -1
     ? `${notes.trimEnd()}\n\n${entry}`.trimStart()
@@ -65,6 +65,14 @@ function main() {
   // The version was already changed by hand in this commit: respect it.
   if (JSON.parse(run(root, ['show', 'HEAD^:package.json'])).version !== current) return
 
+  // Never fold unrelated unstaged edits of these files into the amended commit.
+  try {
+    run(root, ['diff', '--quiet', '--', 'package.json', 'package-lock.json', 'docs/release-notes.md'])
+  } catch {
+    console.error('version: package.json, package-lock.json or docs/release-notes.md has unstaged changes, not bumping')
+    return
+  }
+
   const next = bumpVersion(current, kind)
   writeFileSync(packagePath, source.replace(/("version":\s*")[^"]+(")/, `$1${next}$2`))
   const files = ['package.json']
@@ -80,9 +88,8 @@ function main() {
 
   const notesPath = path.join(root, 'docs', 'release-notes.md')
   if (existsSync(notesPath)) {
-    const subject = HEADER.exec(message.split(/\r?\n/)[0].trim())?.[4] ?? message.split(/\r?\n/)[0].trim()
     const date = new Date().toISOString().slice(0, 10)
-    writeFileSync(notesPath, addReleaseNote(readFileSync(notesPath, 'utf8'), next, date, subject))
+    writeFileSync(notesPath, addReleaseNote(readFileSync(notesPath, 'utf8'), next, date))
     files.push('docs/release-notes.md')
   }
 

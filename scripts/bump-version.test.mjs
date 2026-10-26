@@ -39,12 +39,12 @@ describe('bumpVersion', () => {
 describe('addReleaseNote', () => {
   const notes = '# Notes\n\nIntro.\n\n## 0.3.0 — 2026-01-01\n\n- Old\n'
   it('puts the new version above the previous ones', () => {
-    const result = addReleaseNote(notes, '0.4.0', '2026-02-02', 'add crown')
+    const result = addReleaseNote(notes, '0.4.0', '2026-02-02')
     expect(result.indexOf('## 0.4.0')).toBeLessThan(result.indexOf('## 0.3.0'))
-    expect(result).toContain('- add crown')
+    expect(result).toContain('- (à rédiger)')
     expect(result.startsWith('# Notes\n\nIntro.')).toBe(true)
   })
-  it('does not add a version twice', () => expect(addReleaseNote(notes, '0.3.0', '2026-02-02', 'x')).toBe(notes))
+  it('does not add a version twice', () => expect(addReleaseNote(notes, '0.3.0', '2026-02-02')).toBe(notes))
 })
 
 // Inside a git hook, GIT_DIR / GIT_INDEX_FILE point at the real repository: never pass them on.
@@ -88,8 +88,22 @@ describe('post-commit hook', () => {
     commit('feat: crown for class representatives')
     expect(version()).toBe('0.4.0')
     expect(git('show', '--name-only', '--format=', 'HEAD')).toContain('package.json')
-    expect(git('show', 'HEAD:docs/release-notes.md')).toMatch(/^## 0\.4\.0 — .*\n\n- crown for class representatives/m)
+    expect(git('show', 'HEAD:docs/release-notes.md')).toMatch(/^## 0\.4\.0 — .*\n\n- \(à rédiger\)/m)
     expect(git('status', '--porcelain')).toBe('')
+  })
+
+  it('does not bump when the bumped files have unstaged edits', () => {
+    writeFileSync(
+      path.join(repo, 'docs/release-notes.md'),
+      `${readFileSync(path.join(repo, 'docs/release-notes.md'), 'utf8')}\nedit\n`,
+    )
+    commit('feat: should not bump')
+    expect(version()).toBe('0.4.0')
+    git('checkout', '--', 'docs/release-notes.md')
+    commit('feat: bumps again')
+    expect(version()).toBe('0.5.0')
+    git('reset', '-q', '--hard', 'HEAD~2')
+    expect(version()).toBe('0.4.0')
   })
 
   it('patches on a fix, and leaves docs and chores alone', () => {
