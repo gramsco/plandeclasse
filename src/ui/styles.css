@@ -417,7 +417,12 @@ footer .link-button {
   position: sticky;
   top: 1rem;
   max-height: calc(100vh - 2rem);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* A discreet scrollbar that only takes room when needed, instead of the heavy system one. */
+  scrollbar-width: thin;
+  scrollbar-color: #c3cad5 transparent;
+  overscroll-behavior: contain;
 }
 .side-toggle {
   align-self: flex-start;
@@ -583,7 +588,7 @@ footer .link-button {
   object-fit: cover;
   flex: none;
 }
-.avatar.empty {
+.avatar.no-photo {
   background: #dde3ea;
   display: inline-flex;
   align-items: center;
@@ -1142,4 +1147,28 @@ footer .link-button {
   .card-svg.dimmed {
     opacity: 1;
   }
+}
+
+/* Zoomed sample of the printed cards, in the print dialog. */
+.canvas-area.sample {
+  display: block;
+  aspect-ratio: auto;
+  overflow: visible;
+  border: none;
+  padding: 0;
+}
+.canvas-area.sample .room-svg {
+  max-height: none;
+}
+.canvas-area.sample .print-title,
+.canvas-area.sample .filters {
+  display: none;
+}
+.print-sample-figure {
+  margin: 0 0 0.8rem;
+}
+.print-sample-figure figcaption {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
 }

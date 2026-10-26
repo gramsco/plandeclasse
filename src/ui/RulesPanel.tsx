@@ -14,6 +14,9 @@ import {
 } from '../model/types'
 import { useApp } from '../store'
 
+/** Lowercase, accents removed, so that searches ignore both. */
+const normalizeText = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
 function describeRule(rule: Rule, byId: Map<string, Student>) {
   const name = (id: string) => (byId.get(id) ? fullName(byId.get(id)!) : '?')
   if (rule.type === 'separate') return `${name(rule.studentA)} ≠ ${name(rule.studentB)} (séparés)`
@@ -40,6 +43,7 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
   const [first, setFirst] = useState('')
   const [second, setSecond] = useState('')
   const [group, setGroup] = useState<string[]>([])
+  const [search, setSearch] = useState('')
   const [lightA, setLightA] = useState<TrafficLight>('red')
   const [lightB, setLightB] = useState<TrafficLight>('red')
   const [becomes, setBecomes] = useState<TrafficLight>('orange')
@@ -57,6 +61,7 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
         group.slice(i + 1).forEach((b) => exists(a, b) || addRule(plan.id, { type, studentA: a, studentB: b })),
       )
       setGroup([])
+      setSearch('')
     } else if (type === 'colors') addRule(plan.id, { type, a: lightA, b: lightB })
     else addRule(plan.id, { type, student: first, near: second, becomes })
   }
@@ -139,17 +144,30 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
             <summary>
               {group.length ? `${group.length} élèves à séparer les uns des autres` : 'Choisir les élèves à séparer'}
             </summary>
+            <input
+              type="search"
+              aria-label="Chercher un élève"
+              placeholder="Chercher un élève…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
             <div className="checklist">
-              {students.map((s) => (
-                <label key={s.id} className="check">
-                  <input
-                    type="checkbox"
-                    checked={group.includes(s.id)}
-                    onChange={(e) => setGroup(e.target.checked ? [...group, s.id] : group.filter((id) => id !== s.id))}
-                  />
-                  {fullName(s)}
-                </label>
-              ))}
+              {students
+                .filter(
+                  (s) => group.includes(s.id) || normalizeText(fullName(s)).includes(normalizeText(search.trim())),
+                )
+                .map((s) => (
+                  <label key={s.id} className="check">
+                    <input
+                      type="checkbox"
+                      checked={group.includes(s.id)}
+                      onChange={(e) =>
+                        setGroup(e.target.checked ? [...group, s.id] : group.filter((id) => id !== s.id))
+                      }
+                    />
+                    {fullName(s)}
+                  </label>
+                ))}
             </div>
           </details>
         )}

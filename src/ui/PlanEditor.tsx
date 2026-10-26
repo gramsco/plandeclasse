@@ -25,6 +25,7 @@ import {
   savePrintOptions,
   type PrintOptions,
 } from './printOptions'
+import { Modal } from './Modal'
 import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
 import { RoomSvg } from './RoomSvg'
 import { RulesPanel } from './RulesPanel'
@@ -54,6 +55,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [otherRoomId, setOtherRoomId] = useState('')
   const [hovered, setHovered] = useState<string[]>()
   const [filter, setFilter] = useState<StudentFilter>()
+  const [printOpen, setPrintOpen] = useState(false)
   useEffect(() => savePrintOptions(options), [options])
   useEffect(() => localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'), [collapsed])
   const otherRooms = rooms.filter((r) => r.id !== room.id)
@@ -115,6 +117,15 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [dragging, assignSeat, plan.id])
+
+  // A few students to show in the print dialog, favouring those who make the options visible.
+  const richness = (s: Student) =>
+    Number(s.delegate) * 3 + s.annotations.length + Number(Boolean(s.gender)) + Number(isAesh(s))
+  const sample = [...schoolClass.students]
+    .sort(
+      (a, b) => Number(placedStudentIds.has(b.id)) - Number(placedStudentIds.has(a.id)) || richness(b) - richness(a),
+    )
+    .slice(0, 3)
 
   const photoUrl = (s: Student) => (s.photoId ? photoUrls[s.photoId] : undefined)
   const draggedStudent = drag && studentsById.get(drag.studentId)
@@ -195,7 +206,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                   Modifier la salle…
                 </button>
                 {otherRooms.length > 0 && (
-                  <div className="row">
+                  <>
                     <select
                       aria-label="Autre salle"
                       value={otherRoomId}
@@ -208,36 +219,13 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                         </option>
                       ))}
                     </select>
-                    <button disabled={!otherRoomId} onClick={() => applyPlanToRoom(plan.id, otherRoomId)}>
-                      Appliquer
-                    </button>
-                  </div>
+                    {otherRoomId && (
+                      <button onClick={() => applyPlanToRoom(plan.id, otherRoomId)}>Appliquer à cette salle</button>
+                    )}
+                  </>
                 )}
-                <h3>Ce qui apparaît à l'impression</h3>
-                <div className="row">
-                  <button onClick={() => setOptions(NEUTRAL_OPTIONS)}>Version neutre</button>
-                  <button onClick={() => setOptions(FULL_OPTIONS)}>Tout afficher</button>
-                </div>
-                {(Object.keys(PRINT_OPTION_LABELS) as (keyof PrintOptions)[]).map((key) => (
-                  <label key={key} className="check">
-                    <input
-                      type="checkbox"
-                      checked={options[key]}
-                      onChange={(e) => setOptions({ ...options, [key]: e.target.checked })}
-                    />{' '}
-                    {PRINT_OPTION_LABELS[key]}
-                  </label>
-                ))}
-                <label className="check">
-                  <input type="checkbox" checked={previewMode} onChange={(e) => setPreviewMode(e.target.checked)} />{' '}
-                  Aperçu à l'écran
-                </label>
-                <label className="check">
-                  <input type="checkbox" checked={flipped} onChange={(e) => setFlipped(e.target.checked)} /> Vue
-                  retournée (180°)
-                </label>
-                <button className="primary" onClick={() => window.print()}>
-                  🖨 Imprimer / PDF
+                <button className="primary" onClick={() => setPrintOpen(true)}>
+                  🖨 Imprimer / PDF…
                 </button>
                 <p className="hint">
                   Glissez les personnes sur les places. Déposer sur une place occupée échange les deux.
@@ -325,6 +313,21 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
         </RoomSvg>
         <Legend />
       </div>
+
+      {printOpen && (
+        <PrintDialog
+          sample={sample}
+          photoUrl={photoUrl}
+          light={(s) => analysis.effectiveLight[s.id] ?? s.light}
+          options={options}
+          onOptions={setOptions}
+          previewMode={previewMode}
+          onPreviewMode={setPreviewMode}
+          flipped={flipped}
+          onFlipped={setFlipped}
+          onClose={() => setPrintOpen(false)}
+        />
+      )}
 
       {drag && draggedStudent && (
         <div className="drag-ghost" style={{ left: drag.x, top: drag.y }}>
@@ -481,6 +484,105 @@ function Avatar({ student, url }: { student: Student; url?: string }) {
   return url ? (
     <img className="avatar" src={url} alt="" />
   ) : (
-    <span className="avatar empty">{student.firstName.slice(0, 1)}</span>
+    <span className="avatar no-photo">{student.firstName.slice(0, 1)}</span>
+  )
+}
+
+type PrintDialogProps = {
+  sample: Student[]
+  photoUrl(s: Student): string | undefined
+  light(s: Student): TrafficLight
+  options: PrintOptions
+  onOptions(options: PrintOptions): void
+  previewMode: boolean
+  onPreviewMode(on: boolean): void
+  flipped: boolean
+  onFlipped(on: boolean): void
+  onClose(): void
+}
+
+/** What appears on the printed plan; only shown once the user asks to print. */
+function PrintDialog({
+  sample,
+  photoUrl,
+  light,
+  options,
+  onOptions,
+  previewMode,
+  onPreviewMode,
+  flipped,
+  onFlipped,
+  onClose,
+}: PrintDialogProps) {
+  return (
+    <Modal title="Imprimer / PDF" onClose={onClose}>
+      <figure className="print-sample-figure">
+        <div className={`${canvasClassName(options, false, true)} sample`}>
+          <svg
+            className="room-svg"
+            viewBox={`0 0 ${sample.length * (CARD.w + 12) + 12} ${CARD.h + 24}`}
+            role="img"
+            aria-label="Aperçu de quelques élèves tels qu'ils seront imprimés"
+          >
+            <defs>
+              <clipPath id="photo-clip">
+                <circle cx={PHOTO.cx} cy={PHOTO.cy} r={PHOTO.r} />
+              </clipPath>
+            </defs>
+            <rect className="furniture" x={0} y={0} width="100%" height="100%" rx={10} />
+            {sample.map((student, i) => (
+              <g key={student.id} transform={`translate(${12 + i * (CARD.w + 12)} 12)`}>
+                <StudentCard
+                  student={student}
+                  photoUrl={photoUrl(student)}
+                  ringColor={isAesh(student) ? AESH_COLOR : LIGHT_COLORS[light(student)]}
+                  light={isAesh(student) ? undefined : light(student)}
+                  worsened={false}
+                  isDragged={false}
+                  dimmed={false}
+                  onPointerDown={() => undefined}
+                />
+              </g>
+            ))}
+          </svg>
+        </div>
+        <figcaption>Aperçu de quelques élèves, agrandis</figcaption>
+      </figure>
+      <h4>Ce qui apparaît à l'impression</h4>
+      <div className="row">
+        <button onClick={() => onOptions(NEUTRAL_OPTIONS)}>Version neutre</button>
+        <button onClick={() => onOptions(FULL_OPTIONS)}>Tout afficher</button>
+      </div>
+      {(Object.keys(PRINT_OPTION_LABELS) as (keyof PrintOptions)[]).map((key) => (
+        <label key={key} className="check">
+          <input
+            type="checkbox"
+            checked={options[key]}
+            onChange={(e) => onOptions({ ...options, [key]: e.target.checked })}
+          />{' '}
+          {PRINT_OPTION_LABELS[key]}
+        </label>
+      ))}
+      <label className="check">
+        <input type="checkbox" checked={previewMode} onChange={(e) => onPreviewMode(e.target.checked)} /> Aperçu à
+        l'écran (reste affiché une fois cette fenêtre fermée)
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={flipped} onChange={(e) => onFlipped(e.target.checked)} /> Vue retournée (180°)
+      </label>
+      <div className="form-actions">
+        <button onClick={onClose}>Fermer</button>
+        <button
+          className="primary"
+          onClick={() => {
+            onClose()
+            // Let the dialog disappear before the browser takes its snapshot.
+            setTimeout(() => window.print(), 50)
+          }}
+        >
+          🖨 Imprimer / PDF
+        </button>
+      </div>
+    </Modal>
   )
 }

@@ -63,12 +63,16 @@ try {
   await shot('04-plan-place')
 
   // Print: neutral version (before adding rules and an AESH, for a clean screenshot)
+  await page.getByRole('button', { name: /Imprimer \/ PDF…/ }).click()
   await page.getByRole('button', { name: 'Version neutre' }).click()
-  await page.getByLabel("Aperçu à l'écran").check()
+  await page.getByLabel("Aperçu à l'écran", { exact: false }).check()
+  await page.getByRole('button', { name: 'Fermer' }).click()
   await pause(500)
   await shot('09-impression-neutre')
-  await page.getByLabel("Aperçu à l'écran").uncheck()
+  await page.getByRole('button', { name: /Imprimer \/ PDF…/ }).click()
+  await page.getByLabel("Aperçu à l'écran", { exact: false }).uncheck()
   await page.getByRole('button', { name: 'Tout afficher' }).click()
+  await page.getByRole('button', { name: 'Fermer' }).click()
 
   // Classes: annotations, traffic light, AESH
   await page.getByRole('button', { name: 'Classes (élèves)' }).click()

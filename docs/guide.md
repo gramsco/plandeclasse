@@ -198,16 +198,16 @@ La liste en bas permet de passer d'une hypothèse à l'autre et de garder un his
 
 ## Imprimer
 
-Dans l'onglet **Placer**, la section **« Ce qui apparaît à l'impression »** vous laisse choisir : photos, prénoms, noms, couleurs, annotations, genre, délégués.
+Dans l'onglet **Placer**, le bouton **Imprimer / PDF…** ouvre une fenêtre qui vous laisse choisir ce qui apparaît à l'impression, avec un aperçu agrandi de quelques élèves qui suit vos choix : photos, prénoms, noms, couleurs, annotations, genre, délégués.
 
 - **Version neutre** : photos et noms uniquement, sans couleurs ni annotations ni genre. À utiliser pour un plan **affiché en classe**, que les élèves peuvent lire.
 - **Tout afficher** : version complète pour vous.
-- **Aperçu à l'écran** : montre ces choix tout de suite, au lieu de seulement à l'impression.
+- **Aperçu à l'écran** : montre ces choix sur le plan, au lieu de seulement à l'impression (il reste affiché après la fermeture de la fenêtre ; rouvrez-la pour le désactiver).
 - **Vue retournée (180°)** : le plan vu depuis le fond de la classe, avec les noms toujours lisibles.
 
 ![Version neutre](img/09-impression-neutre.png)
 
-Cliquez sur **Imprimer / PDF**. Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier. Le plan est mis en page en A4 paysage, sur une seule page ; **Aperçu à l'écran** a les mêmes proportions que la page imprimée. Vos choix d'affichage sont mémorisés.
+Cliquez sur **Imprimer / PDF** dans cette fenêtre. Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier. Le plan est mis en page en A4 paysage, sur une seule page ; **Aperçu à l'écran** a les mêmes proportions que la page imprimée. Vos choix d'affichage sont mémorisés.
 
 ---
 
