@@ -5,7 +5,13 @@ sauvegarde avant de mettre à jour.
 
 ## 0.4.0 — 2026-10-26
 
-- (à rédiger)
+- **Mettre des élèves en avant** : en survolant une règle ou une alerte, les élèves concernés restent bien visibles et
+  les autres s'estompent. Au-dessus du plan, des filtres rapides (délégués, AESH, filles, garçons, couleurs) font de même.
+  Rien de tout cela n'est imprimé.
+- **Ouvrir un fichier .classe d'un double-clic** : dans l'application installée (Chrome), un fichier `.classe` s'ouvre
+  directement dans l'application, avec le même choix « Ajouter » / « Tout remplacer » que l'import.
+- **Mises à jour plus rapides** : l'application installée cherche une nouvelle version toutes les heures et chaque fois
+  que vous revenez sur sa fenêtre, au lieu d'attendre une réouverture.
 
 ## 0.3.0 — 2026-10-26
 
@@ -22,9 +28,6 @@ sauvegarde avant de mettre à jour.
 - **Placer au hasard, avec des idées** : alterner filles et garçons, ou répartir les couleurs du feu tricolore pour
   éviter de rapprocher les élèves rouges et oranges.
 - **Séparer des élèves** : une règle peut maintenant séparer autant d'élèves que vous le souhaitez, les uns des autres.
-- **Mettre des élèves en avant** : en survolant une règle ou une alerte, les élèves concernés restent bien visibles et
-  les autres s'estompent. Au-dessus du plan, des filtres rapides (délégués, AESH, filles, garçons, couleurs) font de même.
-  Rien de tout cela n'est imprimé.
 - **Plan déjà retenu** : à la création d'un plan, cochez « Je suis déjà sûr de ce plan » pour le créer directement
   comme plan retenu.
 

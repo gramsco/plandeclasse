@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { buildFile, download, readFile, type ExportFile } from '../io/file'
 import { storage, useApp } from '../store'
 import { Modal } from './Modal'
@@ -20,6 +20,15 @@ export function FileMenu({ onExported }: { onExported(): void }) {
     localStorage.setItem(LAST_EXPORT_KEY, new Date().toISOString())
     onExported()
   }
+
+  // A .classe file opened with the installed app arrives here, and goes through the same import dialog.
+  useEffect(() => {
+    window.launchQueue?.setConsumer(async ({ files }) => {
+      if (files[0]) void pickFile(await files[0].getFile())
+    })
+    // The consumer only needs the latest pickFile, which only uses setters.
+    // oxlint-disable-next-line react/exhaustive-deps
+  }, [])
 
   const pickFile = async (picked?: File) => {
     if (!picked) return

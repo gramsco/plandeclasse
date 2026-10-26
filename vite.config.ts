@@ -27,6 +27,9 @@ export default defineConfig({
         background_color: '#f6f7f9',
         theme_color: '#3b6fd4',
         categories: ['education', 'productivity'],
+        // Double-clicking a .classe file opens it in the installed app (Chromium), in the open window if any.
+        file_handlers: [{ action: './', accept: { 'application/json': ['.classe'] } }],
+        launch_handler: { client_mode: 'focus-existing' },
         icons: [
           { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
