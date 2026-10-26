@@ -3,7 +3,14 @@ import { base64ToBlob, type ExportFile } from '../io/file'
 import { demoClass, shuffleLights } from '../model/demo'
 import { footprint, snap } from '../model/geometry'
 import { DATA_VERSION, migrate, toRawData } from '../model/migrations'
-import { assign, fillRandomly, purgeAssignments, purgeRules } from '../model/plan'
+import {
+  assign,
+  fillRandomly,
+  purgeAssignments,
+  purgeRules,
+  transposeAssignments,
+  type FillStrategy,
+} from '../model/plan'
 import { createFurniture, duplicateFurniture, duplicateRoom, findRoomTemplate } from '../model/rooms'
 import {
   newAesh,
@@ -64,6 +71,7 @@ type Actions = {
   addAesh(firstName: string, lastName: string): void
   setLight(id: string, light: TrafficLight): void
   setGender(id: string, gender: Gender | undefined): void
+  setDelegate(id: string, delegate: boolean): void
   shuffleLights(): void
   toggleAnnotation(id: string, label: string): void
   setSupports(aeshId: string, studentIds: string[]): void
@@ -84,13 +92,14 @@ type Actions = {
   duplicateFurnitureItems(roomId: string, ids: string[]): string[]
   deleteFurniture(roomId: string, ids: string[]): void
 
-  createPlan(classId: string, roomId: string): string
+  createPlan(classId: string, roomId: string, status?: PlanStatus): string
   renamePlan(id: string, name: string): void
   deletePlan(id: string): void
   selectPlan(id: string): void
   assignSeat(planId: string, studentId: string, seatId: string | null): void
   clearPlan(planId: string): void
-  fillPlan(planId: string): void
+  fillPlan(planId: string, strategy?: FillStrategy): void
+  applyPlanToRoom(planId: string, roomId: string): string | undefined
   addRule(planId: string, rule: WithoutId<Rule>): void
   deleteRule(planId: string, ruleId: string): void
   duplicatePlan(planId: string): string | undefined
@@ -361,6 +370,8 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       shuffleLights: () => updateCurrentClass((c) => ({ ...c, students: shuffleLights(c.students) })),
       setGender: (id, gender) =>
         updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, gender } : s)) })),
+      setDelegate: (id, delegate) =>
+        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, delegate } : s)) })),
       setSupports: (aeshId, studentIds) =>
         updateCurrentClass((c) => ({
           ...c,
@@ -483,7 +494,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
         updateRoom(roomId, (r) => ({ ...r, furniture: r.furniture.filter((f) => !ids.includes(f.id)) })),
 
       // ---- Plans ----
-      createPlan(classId, roomId) {
+      createPlan(classId, roomId, status = 'draft') {
         const schoolClass = get().classes.find((c) => c.id === classId)
         const room = roomById(roomId)
         const plan: Plan = {
@@ -493,7 +504,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           roomId,
           assignments: {},
           rules: [],
-          status: 'draft',
+          status,
           notes: '',
           createdAt: new Date().toISOString(),
         }
@@ -507,12 +518,34 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       assignSeat: (planId, studentId, seatId) =>
         updatePlan(planId, (p) => ({ ...p, assignments: assign(p.assignments, studentId, seatId) })),
       clearPlan: (planId) => updatePlan(planId, (p) => ({ ...p, assignments: {} })),
-      fillPlan(planId) {
+      fillPlan(planId, strategy = 'random') {
         const plan = get().plans.find((p) => p.id === planId)
         const schoolClass = plan && get().classes.find((c) => c.id === plan.classId)
         const room = plan && roomById(plan.roomId)
         if (plan && schoolClass && room)
-          updatePlan(planId, (p) => ({ ...p, assignments: fillRandomly(p, schoolClass, room) }))
+          updatePlan(planId, (p) => ({ ...p, assignments: fillRandomly(p, schoolClass, room, Math.random, strategy) }))
+      },
+      applyPlanToRoom(planId, roomId) {
+        const source = get().plans.find((p) => p.id === planId)
+        const from = source && roomById(source.roomId)
+        const to = roomById(roomId)
+        if (!source || !from || !to || from.id === to.id) return
+        const copy: Plan = {
+          ...structuredClone(source),
+          id: newId(),
+          name: `${source.name.replace(/ — .*$/, '')} — ${to.name}`,
+          roomId: to.id,
+          assignments: transposeAssignments(source.assignments, from, to),
+          rules: source.rules.map((r) => ({ ...r, id: newId() })),
+          status: 'draft',
+          notes: '',
+          parentId: source.id,
+          createdAt: new Date().toISOString(),
+          testingSince: undefined,
+        }
+        set((s) => ({ plans: [...s.plans, copy], currentPlanId: copy.id }))
+        scheduleSave('plans', copy.id)
+        return copy.id
       },
       addRule: (planId, rule) =>
         updatePlan(planId, (p) => ({ ...p, rules: [...p.rules, { ...rule, id: newId() } as Rule] })),

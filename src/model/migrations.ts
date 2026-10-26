@@ -6,8 +6,9 @@
  *  1: first version (classes with tags/rules, simple plans)
  *  2: V2 — traffic light, AESH, gender, annotations; rules, status and notes per plan
  *  3: English field and value names (`salles` → `rooms`, `eleves` → `students`, …)
+ *  4: V3 — students can be class representatives (`delegate`)
  */
-export const DATA_VERSION = 3
+export const DATA_VERSION = 4
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -122,6 +123,15 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
       createdAt: p.creeLe,
       testingSince: p.testeDepuis,
     })),
+  }),
+
+  3: (d) => ({
+    classes: (d.classes as any[]).map((c) => ({
+      ...c,
+      students: (c.students ?? []).map((s: any) => ({ ...s, delegate: false })),
+    })),
+    rooms: d.rooms,
+    plans: d.plans,
   }),
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

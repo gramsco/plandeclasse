@@ -60,7 +60,7 @@ Le code source, et la façon de faire tourner l'application sur votre propre ord
 
 ### Mises à jour
 
-Quand une nouvelle version est disponible, un bandeau apparaît en bas de l'écran : **« Mettre à jour »**. Rien n'est jamais installé sans votre accord, donc jamais en plein travail. Vos données sont conservées ; si le format des données a changé, elles sont converties automatiquement et une copie de sécurité de l'ancien état est gardée.
+Quand une nouvelle version est disponible, un bandeau apparaît en bas de l'écran : **« Mettre à jour »**. Rien n'est jamais installé sans votre accord, donc jamais en plein travail. Vos données sont conservées ; si le format des données a changé, elles sont converties automatiquement et une copie de sécurité de l'ancien état est gardée. Cliquez sur le numéro de version, en bas de page, pour lire les **notes de version**.
 
 ---
 
@@ -97,9 +97,10 @@ Onglet **Classes (élèves)**.
 
 Pour chaque élève, vous pouvez :
 
-- **Photo** : cliquez sur le rond 📷 ou glissez-y une image depuis votre ordinateur. La photo est recadrée en carré et réduite (≈ 200 px) : elle reste légère.
+- **Photo** : cliquez sur le rond ou glissez-y une image depuis votre ordinateur. La photo est recadrée en carré et réduite (≈ 200 px) : elle reste légère. Sans photo, un avatar neutre s'affiche ; **Avatar au hasard** dessine un personnage à la place.
 - **Prénom et nom**.
 - **Genre** : Fille ou Garçon (facultatif ; recliquez pour retirer).
+- **Délégué** : le bouton 👑 ajoute une couronne à l'élève sur le plan.
 - **Feu tricolore** : 🟢 sympa, 🟠 à surveiller, 🔴 perturbateur.
 - **Annotations** : PAP, PPS, PAI, PPRE, DYS, HPI, UPE2A, TDAH, ou un libellé de votre choix (« Autre… »).
 
@@ -143,13 +144,27 @@ Si vous modifiez une salle, les plans qui l'utilisent se mettent à jour. Les é
 
 ## Les plans : placer, vérifier, tester
 
-Onglet **Plans**. Le panneau de gauche a trois onglets : **Placer**, **Règles** et **Suivi**.
+Onglet **Plans**. Le panneau de gauche a trois onglets : **Placer**, **Règles** et **Suivi**. Le bouton **« Masquer le menu »** le replie pour donner toute la largeur au plan (recliquez sur ▶ pour le rouvrir).
+
+### Placer au hasard, ou presque
+
+Dans **Placer**, choisissez une façon de répartir les personnes qui n'ont pas encore de place, puis **Placer au hasard les restants** :
+
+- **Au hasard** ;
+- **Alterner filles / garçons** (pour les élèves dont le genre est renseigné) ;
+- **Répartir les couleurs (tricolore)** : évite de rapprocher les élèves rouges et oranges.
+
+Les personnes déjà placées ne bougent pas.
+
+### Appliquer un plan à une autre salle
+
+**Appliquer à la salle…** crée une nouvelle hypothèse dans la salle choisie, en gardant le plan d'origine. Chaque élève est placé à l'endroit le plus proche de sa place d'origine (en proportion de la taille de la salle), même si les tables sont disposées autrement. S'il manque des places, les élèves en trop restent dans « À placer ».
 
 ### Règles et alertes
 
 Dans **Règles**, vous écrivez ce qui est à éviter pour *ce* plan :
 
-- **Séparer deux élèves** précis ;
+- **Séparer des élèves** : cochez autant d'élèves que vous voulez, ils seront séparés les uns des autres ;
 - **Couleurs à ne pas rapprocher** (par exemple rouge avec rouge) ;
 - **Un élève change de couleur près d'un autre** (un vert devient orange près de tel élève : le feu s'affiche alors avec un ▲).
 
@@ -169,7 +184,7 @@ Un plan est une **hypothèse** à tester dans la vraie classe. Dans l'onglet **S
 
 ![Statut et observations](img/08-suivi.png)
 
-1. Donnez-lui un **statut** : *Hypothèse*, *En test*, *Retenu* ou *Abandonné*.
+1. Donnez-lui un **statut** : *Hypothèse*, *En test*, *Retenu* ou *Abandonné*. Un plan retenu s'affiche avec ✓. Si vous êtes déjà sûr de votre plan, cochez « Je suis déjà sûr de ce plan » en le créant : il est directement retenu.
 2. Notez vos **observations** (ce que ça donne en vrai).
 3. Si ça ne tient pas, cliquez sur **« Essayer autre chose »** : une copie (places et règles) est créée comme nouvelle hypothèse, liée à la précédente. Modifiez-la sans risque.
 
@@ -181,7 +196,7 @@ La liste en bas permet de passer d'une hypothèse à l'autre et de garder un his
 
 ## Imprimer
 
-Dans l'onglet **Placer**, la section **« Ce qui apparaît à l'impression »** vous laisse choisir : photos, prénoms, noms, couleurs, annotations, genre.
+Dans l'onglet **Placer**, la section **« Ce qui apparaît à l'impression »** vous laisse choisir : photos, prénoms, noms, couleurs, annotations, genre, délégués.
 
 - **Version neutre** : photos et noms uniquement, sans couleurs ni annotations ni genre. À utiliser pour un plan **affiché en classe**, que les élèves peuvent lire.
 - **Tout afficher** : version complète pour vous.
@@ -190,7 +205,7 @@ Dans l'onglet **Placer**, la section **« Ce qui apparaît à l'impression »** 
 
 ![Version neutre](img/09-impression-neutre.png)
 
-Cliquez sur **Imprimer / PDF**. Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier. Le plan est mis en page en A4 paysage. Vos choix d'affichage sont mémorisés.
+Cliquez sur **Imprimer / PDF**. Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF » pour obtenir un fichier. Le plan est mis en page en A4 paysage, sur une seule page ; **Aperçu à l'écran** a les mêmes proportions que la page imprimée. Vos choix d'affichage sont mémorisés.
 
 ---
 

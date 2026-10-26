@@ -126,6 +126,7 @@ export function NewPlanDialog({ onClose }: { onClose(): void }) {
   const [newClassName, setNewClassName] = useState('')
   const [studentCount, setStudentCount] = useState(24)
   const [roomChoice, setRoomChoice] = useState(rooms[0]?.id ?? `template:${ROOM_TEMPLATES[0].key}`)
+  const [alreadyAdopted, setAlreadyAdopted] = useState(false)
 
   return (
     <Modal title="Nouveau plan de classe" onClose={onClose} wide>
@@ -140,7 +141,7 @@ export function NewPlanDialog({ onClose }: { onClose(): void }) {
                 ? await createDemoClass()
                 : classChoice
           const roomId = roomChoice.startsWith('template:') ? addRoom(roomChoice.slice('template:'.length)) : roomChoice
-          createPlan(classId, roomId)
+          createPlan(classId, roomId, alreadyAdopted ? 'adopted' : 'draft')
           onClose()
         }}
       >
@@ -195,6 +196,10 @@ export function NewPlanDialog({ onClose }: { onClose(): void }) {
         ) : (
           <RoomPreview roomId={roomChoice} />
         )}
+        <label className="check">
+          <input type="checkbox" checked={alreadyAdopted} onChange={(e) => setAlreadyAdopted(e.target.checked)} /> Je
+          suis déjà sûr de ce plan : le créer directement comme plan retenu
+        </label>
         <div className="form-actions">
           <button type="button" onClick={onClose}>
             Annuler

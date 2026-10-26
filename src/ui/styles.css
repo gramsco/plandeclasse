@@ -419,6 +419,17 @@ footer .link-button {
   max-height: calc(100vh - 2rem);
   overflow: auto;
 }
+.side-toggle {
+  align-self: flex-start;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.5rem;
+}
+.editor.side-collapsed {
+  grid-template-columns: auto 1fr;
+}
+.editor.side-collapsed .tools {
+  padding: 0.4rem;
+}
 .tools h3 {
   margin: 0.6rem 0 0.1rem;
   font-size: 0.8rem;
@@ -712,8 +723,32 @@ footer .link-button {
 .card-svg.ghost {
   opacity: 0.3;
 }
-.avatar-empty {
+.neutral-bg {
   fill: #dde3ea;
+}
+.neutral-body {
+  fill: #a9b4c4;
+}
+.neutral-avatar {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.crown {
+  fill: #f0b429;
+  stroke: #7a5a00;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.delegate-toggle {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+}
+.delegate-toggle.active {
+  background: #fff6dc;
+  border-color: #f0b429;
+  font-weight: 600;
 }
 .first-name,
 .last-name,
@@ -782,8 +817,25 @@ footer .link-button {
 .canvas-area.preview-mode.hide-last-name .opt-last-name,
 .canvas-area.preview-mode.hide-colors .opt-colors,
 .canvas-area.preview-mode.hide-annotations .opt-annotations,
-.canvas-area.preview-mode.hide-gender .opt-gender {
+.canvas-area.preview-mode.hide-gender .opt-gender,
+.canvas-area.preview-mode.hide-delegate .opt-delegate {
   display: none;
+}
+.canvas-area.preview-mode {
+  /* Same proportions as the printed page (277 × 188 mm). */
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 277 / 188;
+  overflow: hidden;
+}
+.canvas-area.preview-mode .room-svg {
+  flex: 1 1 0;
+  min-height: 0;
+}
+.canvas-area.preview-mode .print-title {
+  display: block;
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
 }
 .canvas-area.preview-mode.hide-photo .names-group {
   transform: translateY(-34px);
@@ -1002,8 +1054,25 @@ footer .link-button {
     margin: 0 0 4mm;
     font-size: 14pt;
   }
+  /* The page content area is fixed (A4 landscape minus margins) and the plan fills it exactly, so a
+     plan never spills onto a second page. */
+  html,
+  body,
+  .app {
+    height: auto;
+    min-height: 0;
+  }
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    height: 188mm;
+    overflow: hidden;
+    break-inside: avoid;
+  }
   .room-svg {
-    max-height: 170mm;
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
   }
   .room-grid,
   .slot,
@@ -1021,10 +1090,21 @@ footer .link-button {
   .canvas-area.hide-last-name .opt-last-name,
   .canvas-area.hide-colors .opt-colors,
   .canvas-area.hide-annotations .opt-annotations,
-  .canvas-area.hide-gender .opt-gender {
+  .canvas-area.hide-gender .opt-gender,
+  .canvas-area.hide-delegate .opt-delegate {
     display: none;
   }
   .canvas-area.hide-photo .names-group {
     transform: translateY(-34px);
   }
+}
+
+.release-notes {
+  max-height: 60vh;
+  overflow: auto;
+  border: none;
+  padding: 0;
+}
+.release-notes h1 {
+  display: none; /* the dialog already has a title */
 }

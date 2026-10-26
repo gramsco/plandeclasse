@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { LEGACY_V1, LEGACY_V2 } from './legacyFixtures'
+import { LEGACY_V1, LEGACY_V2, LEGACY_V3 } from './legacyFixtures'
 import { DATA_VERSION, migrate, toRawData } from './migrations'
 
 describe('migrations', () => {
-  it('renames every field and value from data version 2 to 3', () => {
+  it('renames every field and value from data version 2 on', () => {
     const data = migrate(LEGACY_V2, 2)
     expect(data.classes[0]).toEqual({
       id: 'c1',
@@ -19,6 +19,7 @@ describe('migrations', () => {
           gender: 'girl',
           role: 'student',
           supports: [],
+          delegate: false,
         },
         {
           id: 'e2',
@@ -30,6 +31,7 @@ describe('migrations', () => {
           gender: undefined,
           role: 'aesh',
           supports: ['e1'],
+          delegate: false,
         },
       ],
     })
@@ -69,6 +71,15 @@ describe('migrations', () => {
       createdAt: '2026-01-01',
       testingSince: '2026-01-02',
     })
+  })
+
+  it('marks nobody as a class representative from data version 3 to 4', () => {
+    const data = migrate(LEGACY_V3, 3) as { classes: { students: { delegate: boolean; firstName: string }[] }[] }
+    expect(data.classes[0].students).toEqual([
+      expect.objectContaining({ firstName: 'Ada', delegate: false }),
+      expect.objectContaining({ firstName: 'Sam', delegate: false }),
+    ])
+    expect(migrate(LEGACY_V3, 3).plans).toEqual(LEGACY_V3.plans)
   })
 
   it('chains from version 1 up to the current version', () => {

@@ -1,8 +1,9 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { COMMON_ANNOTATIONS, fullName, isAesh, parseStudentList, type SchoolClass, type Student } from '../model/types'
-import { addFakePhotos } from '../storage/avatar'
+import { addFakePhotos, generateAvatar } from '../storage/avatar'
 import { resizePhoto } from '../storage/photo'
 import { useApp } from '../store'
+import { NeutralAvatar } from './NeutralAvatar'
 import { TrafficLightPicker } from './TrafficLightPicker'
 
 const genderSummary = (students: Student[]) => {
@@ -121,6 +122,7 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
     removePhoto,
     setLight,
     setGender,
+    setDelegate,
     setSupports,
     toggleAnnotation,
   } = useApp()
@@ -147,7 +149,7 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
         title="Choisir une photo (ou glisser un fichier)"
         onClick={() => fileInput.current?.click()}
       >
-        {photoUrl ? <img src={photoUrl} alt="" /> : <span>📷</span>}
+        {photoUrl ? <img src={photoUrl} alt="" /> : <NeutralAvatar />}
       </button>
       <input
         ref={fileInput}
@@ -208,6 +210,15 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
               </button>
             ))}
           </div>
+          <button
+            role="switch"
+            aria-checked={student.delegate}
+            className={`delegate-toggle ${student.delegate ? 'active' : ''}`}
+            title="Délégué de la classe"
+            onClick={() => setDelegate(student.id, !student.delegate)}
+          >
+            👑 Délégué
+          </button>
           <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
         </>
       )}
@@ -244,6 +255,14 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
         </div>
       )}
       <div className="actions">
+        <button
+          title="Dessine un visage au hasard à la place de la photo"
+          onClick={async () =>
+            setPhoto(student.id, await generateAvatar(Math.floor(Math.random() * 1_000_000), student.gender))
+          }
+        >
+          Avatar au hasard
+        </button>
         {photoUrl && <button onClick={() => removePhoto(student.id)}>Retirer la photo</button>}
         <button className="danger" onClick={() => deleteStudent(student.id)}>
           Supprimer

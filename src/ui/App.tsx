@@ -6,6 +6,7 @@ import { getLastExport, FileMenu } from './FileMenu'
 import { HelpView } from './HelpView'
 import { PlansView } from './PlansView'
 import { PwaBanner } from './PwaBanner'
+import { ReleaseNotesDialog } from './ReleaseNotesDialog'
 import { RoomsView } from './RoomsView'
 
 const TABS: { view: View; label: string }[] = [
@@ -21,6 +22,7 @@ export function App() {
   const { ready, init, classes, view, setView, versionError } = useApp()
   const [usage, setUsage] = useState<string>()
   const [now, setNow] = useState(() => Date.now())
+  const [notesOpen, setNotesOpen] = useState(false)
 
   useEffect(() => {
     void init()
@@ -72,7 +74,10 @@ export function App() {
           <button className="link-button" onClick={() => setView('help')}>
             en savoir plus
           </button>
-          ) · <BackupStatus isEmpty={!classes.length} now={now} /> · v{__APP_VERSION__}
+          ) · <BackupStatus isEmpty={!classes.length} now={now} /> ·{' '}
+          <button className="link-button" title="Voir les notes de version" onClick={() => setNotesOpen(true)}>
+            v{__APP_VERSION__}
+          </button>
         </p>
         <a
           className="github-link"
@@ -87,6 +92,7 @@ export function App() {
           </svg>
         </a>
       </footer>
+      {notesOpen && <ReleaseNotesDialog onClose={() => setNotesOpen(false)} />}
     </div>
   )
 }

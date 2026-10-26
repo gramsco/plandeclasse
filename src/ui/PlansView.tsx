@@ -17,7 +17,7 @@ export function PlansView() {
         <select value={currentPlanId ?? ''} onChange={(e) => selectPlan(e.target.value)} disabled={!plans.length}>
           {plans.map((p) => (
             <option key={p.id} value={p.id}>
-              [{PLAN_STATUS_LABELS[p.status]}] {p.name}
+              {p.status === 'adopted' ? `✓ ${p.name}` : `[${PLAN_STATUS_LABELS[p.status]}] ${p.name}`}
             </option>
           ))}
         </select>

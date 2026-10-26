@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildFile, readFile } from '../io/file'
 import { roomSeats } from '../model/geometry'
 import { LEGACY_V2, legacyFile } from '../model/legacyFixtures'
+import { DATA_VERSION } from '../model/migrations'
 import { parseStudentList } from '../model/types'
 import { memoryStorage } from '../storage/memory'
 import { createAppStore } from './store'
@@ -107,6 +108,36 @@ describe('plans and rooms', () => {
     expect(fa.x === fb.x && fa.y === fb.y).toBe(false)
   })
 
+  it('applies a plan to another room as a new hypothesis, keeping the original', async () => {
+    const { get } = await newStore()
+    const classId = get().addClass('A', 6)
+    const roomId = get().addRoom('doubles-3x4')
+    const otherRoomId = get().addRoom('singles-6x5')
+    const planId = get().createPlan(classId, roomId)
+    get().fillPlan(planId)
+    const copyId = get().applyPlanToRoom(planId, otherRoomId)!
+    const [source, copy] = [planId, copyId].map((id) => get().plans.find((p) => p.id === id)!)
+    expect(copy).toMatchObject({ roomId: otherRoomId, parentId: planId, status: 'draft' })
+    expect(Object.keys(copy.assignments)).toHaveLength(6)
+    expect(source.roomId).toBe(roomId)
+    expect(get().applyPlanToRoom(planId, roomId)).toBeUndefined()
+  })
+
+  it('creates a plan directly as adopted when asked to', async () => {
+    const { get } = await newStore()
+    const planId = get().createPlan(get().addClass('A', 2), get().addRoom('empty'), 'adopted')
+    expect(get().plans.find((p) => p.id === planId)?.status).toBe('adopted')
+  })
+
+  it('marks a student as class representative', async () => {
+    const { get } = await newStore()
+    get().addClass('A', 2)
+    const [first, second] = get().classes[0].students
+    get().setDelegate(first.id, true)
+    expect(get().classes[0].students.map((s) => s.delegate)).toEqual([true, false])
+    expect(second.delegate).toBe(false)
+  })
+
   it('duplicating a plan creates a linked hypothesis with copied rules', async () => {
     const { get } = await newStore()
     const classId = get().addClass('A', 3)
@@ -159,7 +190,7 @@ describe('import / export', () => {
 
   it('migrates a version 1 file on import', () => {
     const file = readFile(JSON.stringify(legacyFile(1)))
-    expect(file.version).toBe(3)
+    expect(file.version).toBe(DATA_VERSION)
     expect(file.classes[0].students[0]).toMatchObject({ firstName: 'Ada', light: 'green', role: 'student' })
     expect(file.rooms[0]).toMatchObject({ name: 'S', width: 1200 })
     expect(file.plans[0]).toMatchObject({ status: 'draft', classId: 'c1', roomId: 's1' })
@@ -174,7 +205,7 @@ describe('import / export', () => {
 
   it('writes the current version and the application version', async () => {
     const file = await buildFile({ classes: [], rooms: [], plans: [] }, memoryStorage())
-    expect(file.version).toBe(3)
+    expect(file.version).toBe(DATA_VERSION)
     expect(file.application).toBeDefined()
   })
 })
@@ -196,8 +227,8 @@ describe('data versions and migrations', () => {
     expect(get().classes[0]).toMatchObject({ name: '6e A', students: [{ firstName: 'Ada', light: 'red' }, {}] })
     expect(get().rooms[0]).toMatchObject({ name: 'Salle 12', furniture: [{ type: 'island' }] })
     expect(get().plans[0]).toMatchObject({ classId: 'c1', roomId: 's1', status: 'testing' })
-    expect(await storage.getMeta('dataVersion')).toBe(3)
-    expect(await storage.getMeta('versionDonnees')).toBe(3) // lets older releases refuse the new data
+    expect(await storage.getMeta('dataVersion')).toBe(DATA_VERSION)
+    expect(await storage.getMeta('versionDonnees')).toBe(DATA_VERSION) // lets older releases refuse the new data
     expect((await storage.getMeta<{ version: number }>('preMigrationBackup'))?.version).toBe(2)
     expect(await storage.loadClasses()).toEqual(get().classes) // migrated in the database too
   })
@@ -211,7 +242,7 @@ describe('data versions and migrations', () => {
 
   it('does nothing on an empty database', async () => {
     const { storage } = await newStore()
-    expect(await storage.getMeta('dataVersion')).toBe(3)
+    expect(await storage.getMeta('dataVersion')).toBe(DATA_VERSION)
     expect(await storage.getMeta('preMigrationBackup')).toBeUndefined()
   })
 

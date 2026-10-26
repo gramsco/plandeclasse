@@ -1,0 +1,5 @@
+#!/bin/sh
+# Raises the version (semver) according to the message of the commit just made: feat → minor,
+# fix/perf → patch, breaking change → major, anything else → unchanged. The change is folded into
+# that commit. Skip with: SKIP_VERSION_BUMP=1 git commit ...   Install with: npm run hooks:install
+exec node "$(git rev-parse --show-toplevel)/scripts/bump-version.mjs"

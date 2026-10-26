@@ -6,6 +6,7 @@ export type PrintOptions = {
   colors: boolean
   annotations: boolean
   gender: boolean
+  delegate: boolean
 }
 
 export const FULL_OPTIONS: PrintOptions = {
@@ -15,6 +16,7 @@ export const FULL_OPTIONS: PrintOptions = {
   colors: true,
   annotations: true,
   gender: true,
+  delegate: true,
 }
 
 /** The "neutral" version: photos and names only, safe to display in the classroom. */
@@ -27,6 +29,7 @@ export const PRINT_OPTION_LABELS: Record<keyof PrintOptions, string> = {
   colors: 'Couleurs (feu tricolore, AESH)',
   annotations: 'Annotations (PAP…)',
   gender: 'Genre (F / G)',
+  delegate: 'Délégués (👑)',
 }
 
 const STORAGE_KEY = 'printOptions'
@@ -74,6 +77,7 @@ export const canvasClassName = (options: PrintOptions, flipped: boolean, preview
     !options.colors && 'hide-colors',
     !options.annotations && 'hide-annotations',
     !options.gender && 'hide-gender',
+    !options.delegate && 'hide-delegate',
   ]
     .filter(Boolean)
     .join(' ')

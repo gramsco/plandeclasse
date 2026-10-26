@@ -15,6 +15,42 @@ export const LEGACY_V1 = {
   plans: [{ id: 'p1', nom: 'P', classeId: 'c1', salleId: 's1', affectations: {} }],
 }
 
+/** Data version 3 (English names, before class representatives). */
+export const LEGACY_V3 = {
+  classes: [
+    {
+      id: 'c1',
+      name: '6e A',
+      students: [
+        {
+          id: 'e1',
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          annotations: [],
+          light: 'green',
+          role: 'student',
+          supports: [],
+        },
+        { id: 'e2', firstName: 'Sam', lastName: '', annotations: [], light: 'green', role: 'aesh', supports: ['e1'] },
+      ],
+    },
+  ],
+  rooms: [{ id: 's1', name: 'Salle 12', width: 1200, height: 800, grid: 10, furniture: [] }],
+  plans: [
+    {
+      id: 'p1',
+      name: 'Plan',
+      classId: 'c1',
+      roomId: 's1',
+      assignments: {},
+      rules: [],
+      status: 'draft',
+      notes: '',
+      createdAt: '2026-01-01',
+    },
+  ],
+}
+
 /** Data version 2 (last release before the English rename), with every kind of record and rule. */
 export const LEGACY_V2 = {
   classes: [

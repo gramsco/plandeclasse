@@ -28,15 +28,25 @@ export function RulesPanel({ plan, schoolClass, alerts }: { plan: Plan; schoolCl
   const [type, setType] = useState<Rule['type']>('separate')
   const [first, setFirst] = useState('')
   const [second, setSecond] = useState('')
+  const [group, setGroup] = useState<string[]>([])
   const [lightA, setLightA] = useState<TrafficLight>('red')
   const [lightB, setLightB] = useState<TrafficLight>('red')
   const [becomes, setBecomes] = useState<TrafficLight>('orange')
 
-  const isValid = type === 'colors' || (first && second && first !== second)
+  const isValid = type === 'colors' || (type === 'separate' ? group.length >= 2 : first && second && first !== second)
   const submit = () => {
     if (!isValid) return
-    if (type === 'separate') addRule(plan.id, { type, studentA: first, studentB: second })
-    else if (type === 'colors') addRule(plan.id, { type, a: lightA, b: lightB })
+    if (type === 'separate') {
+      // One rule per pair of the group, unless the pair is already separated.
+      const exists = (a: string, b: string) =>
+        plan.rules.some(
+          (r) => r.type === 'separate' && [r.studentA, r.studentB].includes(a) && [r.studentA, r.studentB].includes(b),
+        )
+      group.forEach((a, i) =>
+        group.slice(i + 1).forEach((b) => exists(a, b) || addRule(plan.id, { type, studentA: a, studentB: b })),
+      )
+      setGroup([])
+    } else if (type === 'colors') addRule(plan.id, { type, a: lightA, b: lightB })
     else addRule(plan.id, { type, student: first, near: second, becomes })
   }
   const studentSelect = (value: string, onChange: (id: string) => void, placeholder: string) => (
@@ -88,15 +98,28 @@ export function RulesPanel({ plan, schoolClass, alerts }: { plan: Plan; schoolCl
 
       <div className="rule-form">
         <select value={type} onChange={(e) => setType(e.target.value as Rule['type'])}>
-          <option value="separate">Séparer deux élèves</option>
+          <option value="separate">Séparer des élèves</option>
           <option value="colors">Couleurs à ne pas rapprocher</option>
           <option value="influence">Un élève change de couleur près d'un autre</option>
         </select>
         {type === 'separate' && (
-          <>
-            {studentSelect(first, setFirst, 'Élève 1…')}
-            {studentSelect(second, setSecond, 'Élève 2…')}
-          </>
+          <details className="supports" open>
+            <summary>
+              {group.length ? `${group.length} élèves à séparer les uns des autres` : 'Choisir les élèves à séparer'}
+            </summary>
+            <div className="checklist">
+              {students.map((s) => (
+                <label key={s.id} className="check">
+                  <input
+                    type="checkbox"
+                    checked={group.includes(s.id)}
+                    onChange={(e) => setGroup(e.target.checked ? [...group, s.id] : group.filter((id) => id !== s.id))}
+                  />
+                  {fullName(s)}
+                </label>
+              ))}
+            </div>
+          </details>
         )}
         {type === 'colors' && (
           <div className="row">

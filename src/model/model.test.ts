@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { randomLights } from './demo'
 import { footprint, roomSeats, seatCenter, snap } from './geometry'
-import { assign, fillRandomly, purgeAssignments } from './plan'
-import { createFurniture, ROOM_TEMPLATES } from './rooms'
-import { newSchoolClass, type Plan } from './types'
+import { relation } from './analysis'
+import { assign, fillRandomly, purgeAssignments, transposeAssignments } from './plan'
+import { createFurniture, findRoomTemplate, ROOM_TEMPLATES } from './rooms'
+import { newSchoolClass, type Plan, type Student } from './types'
 
 describe('geometry', () => {
   it('footprint: a 90° rotation swaps width and height around the centre', () => {
@@ -99,5 +100,105 @@ describe('randomLights', () => {
       expect(lights).toHaveLength(28)
     }
     expect(randomLights(3)).toHaveLength(3)
+  })
+})
+
+/** Deterministic generator (mulberry32), so that placements are reproducible. */
+const seeded = (seed: number) => () => {
+  seed = (seed + 0x6d2b79f5) >>> 0
+  let t = seed
+  t = Math.imul(t ^ (t >>> 15), t | 1)
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+}
+
+describe('placing students with a strategy', () => {
+  const room = findRoomTemplate('singles-6x5')!.create()
+  const planOf = (assignments: Record<string, string> = {}): Plan => ({
+    id: 'p',
+    name: 'p',
+    classId: 'c',
+    roomId: room.id,
+    assignments,
+    rules: [],
+    status: 'draft',
+    notes: '',
+    createdAt: '',
+  })
+  const sideNeighbours = (assignments: Record<string, string>, students: Student[]) => {
+    const byId = new Map(students.map((s) => [s.id, s]))
+    const seats = roomSeats(room).filter((s) => assignments[s.seatId])
+    return seats.flatMap((a, i) =>
+      seats
+        .slice(i + 1)
+        .filter((b) => relation(a, b) === 'side')
+        .map((b) => [byId.get(assignments[a.seatId])!, byId.get(assignments[b.seatId])!] as const),
+    )
+  }
+
+  it('alternates girls and boys side by side', () => {
+    const schoolClass = newSchoolClass('A', 20)
+    schoolClass.students.forEach((s, i) => (s.gender = i % 2 ? 'girl' : 'boy'))
+    const assignments = fillRandomly(planOf(), schoolClass, room, seeded(1), 'alternate-gender')
+    expect(Object.keys(assignments)).toHaveLength(20)
+    const pairs = sideNeighbours(assignments, schoolClass.students)
+    expect(pairs.length).toBeGreaterThan(0)
+    expect(pairs.filter(([a, b]) => a.gender === b.gender)).toHaveLength(0)
+  })
+
+  it('never puts two red students side by side when it can be avoided', () => {
+    const schoolClass = newSchoolClass('A', 20)
+    schoolClass.students.slice(0, 4).forEach((s) => (s.light = 'red'))
+    schoolClass.students.slice(4, 8).forEach((s) => (s.light = 'orange'))
+    for (const seed of [1, 2, 3, 4, 5]) {
+      const assignments = fillRandomly(planOf(), schoolClass, room, seeded(seed), 'spread-lights')
+      const pairs = sideNeighbours(assignments, schoolClass.students)
+      expect(pairs.filter(([a, b]) => a.light === 'red' && b.light === 'red')).toHaveLength(0)
+    }
+  })
+
+  it('keeps the people already placed', () => {
+    const schoolClass = newSchoolClass('A', 5)
+    const [seat] = roomSeats(room)
+    const assignments = fillRandomly(
+      planOf({ [seat.seatId]: schoolClass.students[0].id }),
+      schoolClass,
+      room,
+      seeded(3),
+      'alternate-gender',
+    )
+    expect(assignments[seat.seatId]).toBe(schoolClass.students[0].id)
+    expect(new Set(Object.values(assignments)).size).toBe(5)
+  })
+})
+
+describe('transposeAssignments', () => {
+  it('keeps people at the same relative place in a bigger room', () => {
+    const small = findRoomTemplate('doubles-3x4')!.create()
+    const big = findRoomTemplate('doubles-3x5')!.create()
+    const seats = roomSeats(small)
+    const first = seats[0]
+    const last = seats[seats.length - 1]
+    const result = transposeAssignments({ [first.seatId]: 'a', [last.seatId]: 'b' }, small, big)
+    const bigSeats = roomSeats(big)
+    expect(result[bigSeats[0].seatId]).toBe('a')
+    expect(result[bigSeats[bigSeats.length - 1].seatId]).toBe('b')
+  })
+
+  it('leaves people without a seat when the new room is smaller', () => {
+    const big = findRoomTemplate('singles-6x5')!.create()
+    const tiny = findRoomTemplate('islands-3x2')!.create()
+    const seats = roomSeats(big)
+    const assignments = Object.fromEntries(seats.map((s, i) => [s.seatId, `s${i}`]))
+    const result = transposeAssignments(assignments, big, tiny)
+    expect(Object.keys(result)).toHaveLength(roomSeats(tiny).length)
+    expect(new Set(Object.values(result)).size).toBe(Object.keys(result).length)
+  })
+
+  it('handles an empty plan and a room without seats', () => {
+    const empty = findRoomTemplate('empty')!.create()
+    const room = findRoomTemplate('doubles-3x4')!.create()
+    expect(transposeAssignments({}, room, empty)).toEqual({})
+    expect(transposeAssignments({ x: 'a' }, empty, room)).toEqual({})
   })
 })
