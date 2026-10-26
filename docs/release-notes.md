@@ -3,17 +3,28 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.6.0 — 2026-10-26
+
+- **Passer d'une classe à l'autre** : la liste des classes est à gauche, et un champ de recherche filtre les élèves par
+  nom (accents et majuscules ignorés) en indiquant combien il y en a dans chaque classe.
+- **Fiche d'un élève sur le plan** : un clic sur un élève ouvre sa fiche, avec les actions rapides (délégué, suppléant,
+  feu tricolore, retirer de sa place).
+- **Suppléant** : une couronne argentée pour le suppléant du délégué, sur la fiche, sur le plan et dans les filtres.
+
 ## 0.5.0 — 2026-10-26
 
-- (à rédiger)
+- **Imprimer / PDF dans une fenêtre** : les options d'impression ne chargent plus le menu. La fenêtre montre un aperçu
+  agrandi de quelques élèves, qui suit vos choix en direct.
+- **Chercher un élève pour les séparer** : en créant une règle « Séparer », un champ de recherche (sans tenir compte des
+  accents ni des majuscules) filtre la liste. Les élèves déjà cochés restent affichés.
+- **Menu de gauche** : le menu ne déborde plus et sa barre de défilement est corrigée. Sans photo, l'avatar vide n'a
+  plus de marge en trop.
 
 ## 0.4.0 — 2026-10-26
 
 - **Mettre des élèves en avant** : en survolant une règle ou une alerte, les élèves concernés restent bien visibles et
   les autres s'estompent. Au-dessus du plan, des filtres rapides (délégués, AESH, filles, garçons, couleurs) font de même.
   Rien de tout cela n'est imprimé.
-- **Imprimer / PDF dans une fenêtre** : les options d'impression ne chargent plus le menu. La fenêtre montre un aperçu
-  agrandi de quelques élèves, qui suit vos choix en direct.
 - **Ouvrir un fichier .classe d'un double-clic** : dans l'application installée (Chrome), un fichier `.classe` s'ouvre
   directement dans l'application, avec le même choix « Ajouter » / « Tout remplacer » que l'import.
 - **Mises à jour plus rapides** : l'application installée cherche une nouvelle version toutes les heures et chaque fois

@@ -18,7 +18,7 @@ export function NeutralAvatar() {
   )
 }
 
-/** The crown that marks a class representative, drawn at the origin (16×10). */
-export function CrownShape() {
-  return <path d="M0 10 L1 1 L5 5 L8 0 L11 5 L15 1 L16 10 Z" className="crown" />
+/** The crown that marks a class representative (gold) or their deputy (silver), drawn at the origin (16×10). */
+export function CrownShape({ silver = false }: { silver?: boolean }) {
+  return <path d="M0 10 L1 1 L5 5 L8 0 L11 5 L15 1 L16 10 Z" className={silver ? 'crown crown-silver' : 'crown'} />
 }

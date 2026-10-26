@@ -138,6 +138,17 @@ describe('plans and rooms', () => {
     expect(second.delegate).toBe(false)
   })
 
+  it('a student cannot be both delegate and deputy', async () => {
+    const { get } = await newStore()
+    get().addClass('A', 2)
+    const [first] = get().classes[0].students
+    get().setDelegate(first.id, true)
+    get().setDeputy(first.id, true)
+    expect(get().classes[0].students[0]).toMatchObject({ delegate: false, deputy: true })
+    get().setDelegate(first.id, true)
+    expect(get().classes[0].students[0]).toMatchObject({ delegate: true, deputy: false })
+  })
+
   it('duplicating a plan creates a linked hypothesis with copied rules', async () => {
     const { get } = await newStore()
     const classId = get().addClass('A', 3)

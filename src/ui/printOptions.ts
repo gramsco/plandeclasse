@@ -29,7 +29,7 @@ export const PRINT_OPTION_LABELS: Record<keyof PrintOptions, string> = {
   colors: 'Couleurs (feu tricolore, AESH)',
   annotations: 'Annotations (PAP…)',
   gender: 'Genre (F / G)',
-  delegate: 'Délégués (👑)',
+  delegate: 'Délégués et suppléants (couronnes)',
 }
 
 const STORAGE_KEY = 'printOptions'

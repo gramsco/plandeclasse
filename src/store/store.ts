@@ -72,6 +72,7 @@ type Actions = {
   setLight(id: string, light: TrafficLight): void
   setGender(id: string, gender: Gender | undefined): void
   setDelegate(id: string, delegate: boolean): void
+  setDeputy(id: string, deputy: boolean): void
   shuffleLights(): void
   toggleAnnotation(id: string, label: string): void
   setSupports(aeshId: string, studentIds: string[]): void
@@ -370,8 +371,17 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       shuffleLights: () => updateCurrentClass((c) => ({ ...c, students: shuffleLights(c.students) })),
       setGender: (id, gender) =>
         updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, gender } : s)) })),
+      // Delegate and deputy exclude each other: one student cannot hold both crowns.
       setDelegate: (id, delegate) =>
-        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, delegate } : s)) })),
+        updateCurrentClass((c) => ({
+          ...c,
+          students: c.students.map((s) => (s.id === id ? { ...s, delegate, deputy: delegate ? false : s.deputy } : s)),
+        })),
+      setDeputy: (id, deputy) =>
+        updateCurrentClass((c) => ({
+          ...c,
+          students: c.students.map((s) => (s.id === id ? { ...s, deputy, delegate: deputy ? false : s.delegate } : s)),
+        })),
       setSupports: (aeshId, studentIds) =>
         updateCurrentClass((c) => ({
           ...c,

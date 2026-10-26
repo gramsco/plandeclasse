@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { addReleaseNote, bumpKind, bumpVersion } from './bump-version.mjs'
+import { addReleaseNote, bumpKind, bumpVersion, PENDING_HEADING, PLACEHOLDER } from './bump-version.mjs'
 
 describe('bumpKind', () => {
   it.each([
@@ -44,7 +44,21 @@ describe('addReleaseNote', () => {
     expect(result).toContain('- (à rédiger)')
     expect(result.startsWith('# Notes\n\nIntro.')).toBe(true)
   })
+  it('turns the pending section into the new version instead of adding a placeholder', () => {
+    const pending = '# Notes\n\n## À venir\n\n- New thing\n\n## 0.3.0 — 2026-01-01\n\n- Old\n'
+    const result = addReleaseNote(pending, '0.4.0', '2026-02-02')
+    expect(result).toContain('## 0.4.0 — 2026-02-02\n\n- New thing')
+    expect(result).not.toContain(PENDING_HEADING)
+    expect(result).not.toContain(PLACEHOLDER)
+  })
   it('does not add a version twice', () => expect(addReleaseNote(notes, '0.3.0', '2026-02-02')).toBe(notes))
+})
+
+describe('release notes', () => {
+  it('have no placeholder left to rewrite', () => {
+    const notes = readFileSync(path.resolve(import.meta.dirname, '../docs/release-notes.md'), 'utf8')
+    expect(notes).not.toContain(PLACEHOLDER)
+  })
 })
 
 // Inside a git hook, GIT_DIR / GIT_INDEX_FILE point at the real repository: never pass them on.

@@ -4,7 +4,7 @@ import { footprint, roomSeats, seatCenter, snap } from './geometry'
 import { relation } from './analysis'
 import { assign, fillRandomly, purgeAssignments, transposeAssignments } from './plan'
 import { createFurniture, findRoomTemplate, ROOM_TEMPLATES } from './rooms'
-import { newSchoolClass, type Plan, type Student } from './types'
+import { newSchoolClass, normalizeStudent, type Plan, type Student } from './types'
 
 describe('geometry', () => {
   it('footprint: a 90° rotation swaps width and height around the centre', () => {
@@ -200,5 +200,16 @@ describe('transposeAssignments', () => {
     const room = findRoomTemplate('doubles-3x4')!.create()
     expect(transposeAssignments({}, room, empty)).toEqual({})
     expect(transposeAssignments({ x: 'a' }, empty, room)).toEqual({})
+  })
+})
+
+describe('normalizeStudent', () => {
+  it('keeps the delegate when a file marks a student as both delegate and deputy', () => {
+    const student = normalizeStudent({ id: 's', delegate: true, deputy: true })
+    expect(student).toMatchObject({ delegate: true, deputy: false })
+  })
+
+  it('keeps a deputy who is not a delegate', () => {
+    expect(normalizeStudent({ id: 's', deputy: true })).toMatchObject({ delegate: false, deputy: true })
   })
 })

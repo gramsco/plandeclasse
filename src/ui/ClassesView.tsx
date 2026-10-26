@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { fullName, type Student } from '../model/types'
+import { matchesSearch } from '../model/search'
 import { useApp } from '../store'
 import { NewClassDialog } from './dialogs'
 import { StudentsPanel } from './StudentsPanel'
@@ -6,19 +8,15 @@ import { StudentsPanel } from './StudentsPanel'
 export function ClassesView() {
   const { classes, currentClassId, selectClass, renameClass, duplicateClass, deleteClass, plans } = useApp()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [query, setQuery] = useState('')
   const schoolClass = classes.find((c) => c.id === currentClassId)
   const planCount = plans.filter((p) => p.classId === currentClassId).length
+  const searching = query.trim() !== ''
+  const matchCount = (students: Student[]) => students.filter((s) => matchesSearch(fullName(s), query)).length
 
   return (
     <>
       <div className="toolbar">
-        <select value={currentClassId ?? ''} onChange={(e) => selectClass(e.target.value)} disabled={!classes.length}>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
         <button onClick={() => setDialogOpen(true)}>+ Nouvelle classe</button>
         {schoolClass && (
           <>
@@ -43,13 +41,41 @@ export function ClassesView() {
           </>
         )}
       </div>
-      <main>
-        {schoolClass ? (
-          <StudentsPanel schoolClass={schoolClass} />
-        ) : (
-          <p className="empty">Aucune classe. Créez-en une pour saisir vos élèves.</p>
-        )}
-      </main>
+      <div className="classes-layout">
+        <nav className="class-list" aria-label="Classes">
+          <input
+            type="search"
+            aria-label="Chercher un élève"
+            placeholder="Chercher un élève…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <ul>
+            {classes.map((c) => {
+              const count = searching ? matchCount(c.students) : 0
+              return (
+                <li key={c.id}>
+                  <button
+                    className={`${c.id === currentClassId ? 'active' : ''} ${searching && count === 0 ? 'no-match' : ''}`}
+                    aria-current={c.id === currentClassId ? 'true' : undefined}
+                    onClick={() => selectClass(c.id)}
+                  >
+                    <span>{c.name}</span>
+                    <small>{searching ? `${count} trouvé${count > 1 ? 's' : ''}` : c.students.length}</small>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+        <main>
+          {schoolClass ? (
+            <StudentsPanel schoolClass={schoolClass} query={query} />
+          ) : (
+            <p className="empty">Aucune classe. Créez-en une pour saisir vos élèves.</p>
+          )}
+        </main>
+      </div>
       {dialogOpen && <NewClassDialog onClose={() => setDialogOpen(false)} />}
     </>
   )

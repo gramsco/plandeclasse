@@ -37,10 +37,19 @@ export function bumpVersion(version, kind) {
   return `${major}.${minor}.${patch}`
 }
 
-/** Adds the heading of a new version on top of the release notes, with a French placeholder to rewrite. */
+/** Heading under which the notes of the next release are written, before the commit that releases them. */
+export const PENDING_HEADING = '## À venir'
+export const PLACEHOLDER = '(à rédiger)'
+
+/**
+ * Gives the new version its heading in the release notes: the pending section becomes that version's,
+ * or, when nobody wrote one, a placeholder is added (and the quality gate fails until it is rewritten).
+ */
 export function addReleaseNote(notes, version, date) {
   if (new RegExp(`^## ${version.replaceAll('.', '\\.')}\\b`, 'm').test(notes)) return notes
-  const entry = `## ${version} — ${date}\n\n- (à rédiger)\n\n`
+  const pending = new RegExp(`^${PENDING_HEADING}[ \\t]*$`, 'm')
+  if (pending.test(notes)) return notes.replace(pending, `## ${version} — ${date}`)
+  const entry = `## ${version} — ${date}\n\n- ${PLACEHOLDER}\n\n`
   const firstVersion = notes.search(/^## /m)
   return firstVersion === -1
     ? `${notes.trimEnd()}\n\n${entry}`.trimStart()

@@ -12,10 +12,8 @@ import {
   type Student,
   type TrafficLight,
 } from '../model/types'
+import { matchesSearch } from '../model/search'
 import { useApp } from '../store'
-
-/** Lowercase, accents removed, so that searches ignore both. */
-const normalizeText = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
 function describeRule(rule: Rule, byId: Map<string, Student>) {
   const name = (id: string) => (byId.get(id) ? fullName(byId.get(id)!) : '?')
@@ -153,9 +151,7 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
             />
             <div className="checklist">
               {students
-                .filter(
-                  (s) => group.includes(s.id) || normalizeText(fullName(s)).includes(normalizeText(search.trim())),
-                )
+                .filter((s) => group.includes(s.id) || matchesSearch(fullName(s), search))
                 .map((s) => (
                   <label key={s.id} className="check">
                     <input

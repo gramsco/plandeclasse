@@ -62,6 +62,15 @@ try {
   await pause(600)
   await shot('04-plan-place')
 
+  // Student details: click a card, make the student deputy (silver crown), then undo to keep later shots unchanged.
+  await page.locator('.card-svg').first().click()
+  const details = page.getByRole('region', { name: /Détails de/ })
+  await details.getByRole('switch', { name: 'Suppléant' }).click()
+  await pause(300)
+  await shot('04b-fiche-eleve')
+  await details.getByRole('switch', { name: 'Suppléant' }).click()
+  await details.getByRole('button', { name: 'Fermer les détails' }).click()
+
   // Print: neutral version (before adding rules and an AESH, for a clean screenshot)
   await page.getByRole('button', { name: /Imprimer \/ PDF…/ }).click()
   await page.getByRole('button', { name: 'Version neutre' }).click()

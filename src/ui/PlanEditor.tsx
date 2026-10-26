@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import { analyze } from '../model/analysis'
 import { CARD, PHOTO, roomSeats, seatCenter } from '../model/geometry'
 import { matchesFilter, STUDENT_FILTER_LABELS, STUDENT_FILTERS, type StudentFilter } from '../model/filters'
@@ -30,8 +30,11 @@ import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
 import { RoomSvg } from './RoomSvg'
 import { RulesPanel } from './RulesPanel'
 import { TrackingPanel } from './TrackingPanel'
+import { TrafficLightPicker } from './TrafficLightPicker'
 
-type DragState = { studentId: string; x: number; y: number }
+type DragState = { studentId: string; x: number; y: number; startX: number; startY: number }
+/** Below this distance (px) a press is a click that selects the student, not a drag. */
+const CLICK_DISTANCE = 5
 type SideTab = 'place' | 'rules' | 'tracking'
 const COLLAPSED_KEY = 'sideCollapsed'
 
@@ -56,6 +59,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [hovered, setHovered] = useState<string[]>()
   const [filter, setFilter] = useState<StudentFilter>()
   const [printOpen, setPrintOpen] = useState(false)
+  const [selectedId, setSelectedId] = useState<string>()
   useEffect(() => savePrintOptions(options), [options])
   useEffect(() => localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0'), [collapsed])
   const otherRooms = rooms.filter((r) => r.id !== room.id)
@@ -90,22 +94,30 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const startDrag = (e: PointerEvent, studentId: string) => {
     if (e.button !== 0) return
     e.preventDefault()
-    setDrag({ studentId, x: e.clientX, y: e.clientY })
+    setDrag({ studentId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY })
   }
 
   const dragging = drag !== undefined
+  const dragRef = useRef(drag)
+  useEffect(() => {
+    dragRef.current = drag
+  }, [drag])
   useEffect(() => {
     if (!dragging) return
     const onMove = (e: globalThis.PointerEvent) => setDrag((d) => d && { ...d, x: e.clientX, y: e.clientY })
     const onUp = (e: globalThis.PointerEvent) => {
-      setDrag((d) => {
-        if (!d) return d
-        const target = document.elementFromPoint(e.clientX, e.clientY)
-        const seatId = target?.closest('[data-seat-id]')?.getAttribute('data-seat-id')
-        if (seatId) assignSeat(plan.id, d.studentId, seatId)
-        else if (target?.closest('[data-zone="unplaced"]')) assignSeat(plan.id, d.studentId, null)
-        return undefined
-      })
+      // Read from a ref: state updaters must stay free of side effects.
+      const d = dragRef.current
+      setDrag(undefined)
+      if (!d) return
+      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < CLICK_DISTANCE) {
+        setSelectedId(d.studentId)
+        return
+      }
+      const target = document.elementFromPoint(e.clientX, e.clientY)
+      const seatId = target?.closest('[data-seat-id]')?.getAttribute('data-seat-id')
+      if (seatId) assignSeat(plan.id, d.studentId, seatId)
+      else if (target?.closest('[data-zone="unplaced"]')) assignSeat(plan.id, d.studentId, null)
     }
     const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && setDrag(undefined)
     window.addEventListener('pointermove', onMove)
@@ -120,7 +132,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
 
   // A few students to show in the print dialog, favouring those who make the options visible.
   const richness = (s: Student) =>
-    Number(s.delegate) * 3 + s.annotations.length + Number(Boolean(s.gender)) + Number(isAesh(s))
+    Number(s.delegate || s.deputy) * 3 + s.annotations.length + Number(Boolean(s.gender)) + Number(isAesh(s))
   const sample = [...schoolClass.students]
     .sort(
       (a, b) => Number(placedStudentIds.has(b.id)) - Number(placedStudentIds.has(a.id)) || richness(b) - richness(a),
@@ -129,6 +141,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
 
   const photoUrl = (s: Student) => (s.photoId ? photoUrls[s.photoId] : undefined)
   const draggedStudent = drag && studentsById.get(drag.studentId)
+  const selected = selectedId ? studentsById.get(selectedId) : undefined
 
   return (
     <div className={`editor ${collapsed ? 'side-collapsed' : ''}`}>
@@ -164,6 +177,15 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
 
             {tab === 'place' && (
               <>
+                {selected && (
+                  <StudentDetails
+                    student={selected}
+                    photoUrl={photoUrl(selected)}
+                    seated={Object.values(plan.assignments).includes(selected.id)}
+                    onUnseat={() => assignSeat(plan.id, selected.id, null)}
+                    onClose={() => setSelectedId(undefined)}
+                  />
+                )}
                 <div data-zone="unplaced" className={`unplaced ${drag ? 'drop-target' : ''}`}>
                   <h3>
                     À placer <small>{unplaced.length}</small>
@@ -171,7 +193,11 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                   {unplaced.length === 0 && <p className="hint">Tout le monde est placé 🎉</p>}
                   <ul>
                     {unplaced.map((s) => (
-                      <li key={s.id} className="student-chip" onPointerDown={(e) => startDrag(e, s.id)}>
+                      <li
+                        key={s.id}
+                        className={`student-chip ${s.id === selectedId ? 'selected' : ''}`}
+                        onPointerDown={(e) => startDrag(e, s.id)}
+                      >
                         <Avatar student={s} url={photoUrl(s)} />
                         <span>{fullName(s)}</span>
                         {isAesh(s) ? <em className="aesh-badge">AESH</em> : <span className={`dot light-${s.light}`} />}
@@ -281,6 +307,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                         light={light}
                         worsened={Boolean(worsened)}
                         isDragged={drag?.studentId === student.id}
+                        selected={student.id === selectedId}
                         dimmed={focus ? !focus.has(student.id) : false}
                         onPointerDown={(e) => startDrag(e, student.id)}
                       />
@@ -346,6 +373,7 @@ type StudentCardProps = {
   light?: TrafficLight
   worsened: boolean
   isDragged: boolean
+  selected: boolean
   dimmed: boolean
   onPointerDown(e: PointerEvent): void
 }
@@ -358,17 +386,22 @@ function StudentCard({
   light,
   worsened,
   isDragged,
+  selected,
   dimmed,
   onPointerDown,
 }: StudentCardProps) {
   const aesh = isAesh(student)
   return (
-    <g className={`card-svg ${isDragged ? 'ghost' : ''} ${dimmed ? 'dimmed' : ''}`} onPointerDown={onPointerDown}>
+    <g
+      className={`card-svg ${isDragged ? 'ghost' : ''} ${selected ? 'selected' : ''} ${dimmed ? 'dimmed' : ''}`}
+      onPointerDown={onPointerDown}
+    >
       <rect className="card-bg" width={CARD.w} height={CARD.h} rx={10} />
       <title>
         {[
           fullName(student),
           student.delegate && 'délégué',
+          student.deputy && 'suppléant',
           student.gender && GENDER_LABELS[student.gender],
           ...student.annotations,
         ]
@@ -424,13 +457,13 @@ function StudentCard({
           )}
         </g>
       )}
-      {student.delegate && (
+      {(student.delegate || student.deputy) && (
         <g
           className="opt-delegate"
           transform={`translate(${PHOTO.cx + PHOTO.r - 20} ${PHOTO.cy + PHOTO.r - 16}) scale(1.4)`}
         >
-          <title>Délégué</title>
-          <CrownShape />
+          <title>{student.delegate ? 'Délégué' : 'Suppléant'}</title>
+          <CrownShape silver={student.deputy} />
         </g>
       )}
       {aesh && (
@@ -462,6 +495,64 @@ function StudentCard({
         </text>
       </g>
     </g>
+  )
+}
+
+type StudentDetailsProps = {
+  student: Student
+  photoUrl?: string
+  seated: boolean
+  onUnseat(): void
+  onClose(): void
+}
+
+/** Details and quick actions for the student clicked on the plan. Changes apply to the class, so to every plan. */
+function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: StudentDetailsProps) {
+  const { setDelegate, setDeputy, setLight } = useApp()
+  const aesh = isAesh(student)
+  return (
+    <section className="student-details" aria-label={`Détails de ${fullName(student)}`}>
+      <header>
+        <Avatar student={student} url={photoUrl} />
+        <strong>{fullName(student)}</strong>
+        <button aria-label="Fermer les détails" onClick={onClose}>
+          ✕
+        </button>
+      </header>
+      <p className="hint">
+        {[
+          aesh ? 'AESH' : student.gender && GENDER_LABELS[student.gender],
+          ...student.annotations,
+          seated ? 'placé' : 'à placer',
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      </p>
+      {!aesh && (
+        <>
+          <div className="row">
+            <button
+              role="switch"
+              aria-checked={student.delegate}
+              className={`delegate-toggle ${student.delegate ? 'active' : ''}`}
+              onClick={() => setDelegate(student.id, !student.delegate)}
+            >
+              👑 Délégué
+            </button>
+            <button
+              role="switch"
+              aria-checked={student.deputy}
+              className={`delegate-toggle deputy ${student.deputy ? 'active' : ''}`}
+              onClick={() => setDeputy(student.id, !student.deputy)}
+            >
+              Suppléant
+            </button>
+          </div>
+          <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
+        </>
+      )}
+      {seated && <button onClick={onUnseat}>Retirer de sa place</button>}
+    </section>
   )
 }
 
@@ -539,6 +630,7 @@ function PrintDialog({
                   light={isAesh(student) ? undefined : light(student)}
                   worsened={false}
                   isDragged={false}
+                  selected={false}
                   dimmed={false}
                   onPointerDown={() => undefined}
                 />

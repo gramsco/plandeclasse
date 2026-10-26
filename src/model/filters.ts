@@ -1,12 +1,13 @@
 import { isAesh, TRAFFIC_LIGHT_LABELS, type Rule, type SchoolClass, type Student, type TrafficLight } from './types'
 
 /** Quick filters that put some students forward on the plan (the others are dimmed). */
-export type StudentFilter = 'delegate' | 'aesh' | 'girl' | 'boy' | TrafficLight
+export type StudentFilter = 'delegate' | 'deputy' | 'aesh' | 'girl' | 'boy' | TrafficLight
 
-export const STUDENT_FILTERS: StudentFilter[] = ['delegate', 'aesh', 'girl', 'boy', 'red', 'orange', 'green']
+export const STUDENT_FILTERS: StudentFilter[] = ['delegate', 'deputy', 'aesh', 'girl', 'boy', 'red', 'orange', 'green']
 
 export const STUDENT_FILTER_LABELS: Record<StudentFilter, string> = {
   delegate: '👑 Délégués',
+  deputy: 'Suppléants',
   aesh: 'AESH',
   girl: 'Filles',
   boy: 'Garçons',
@@ -16,6 +17,7 @@ export const STUDENT_FILTER_LABELS: Record<StudentFilter, string> = {
 /** `light` is the effective one (after the influence rules) when known. */
 export function matchesFilter(student: Student, filter: StudentFilter, light: TrafficLight = student.light) {
   if (filter === 'delegate') return student.delegate
+  if (filter === 'deputy') return student.deputy
   if (filter === 'aesh') return isAesh(student)
   if (filter === 'girl' || filter === 'boy') return student.gender === filter
   return !isAesh(student) && light === filter

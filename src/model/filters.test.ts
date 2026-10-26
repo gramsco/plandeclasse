@@ -17,6 +17,12 @@ describe('student filters', () => {
     expect(matchesFilter(aesh, 'aesh')).toBe(true)
   })
 
+  it('matches deputies apart from delegates', () => {
+    expect(matchesFilter({ ...bob, deputy: true }, 'deputy')).toBe(true)
+    expect(matchesFilter({ ...bob, deputy: true }, 'delegate')).toBe(false)
+    expect(matchesFilter(ada, 'deputy')).toBe(false)
+  })
+
   it('matches a colour, using the effective one when given, and never for an AESH', () => {
     expect(matchesFilter(bob, 'orange')).toBe(true)
     expect(matchesFilter(bob, 'red', 'red')).toBe(true)

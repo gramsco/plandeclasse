@@ -26,7 +26,8 @@ export type Student = {
   annotations: string[] // free-form labels such as PAP, PPS, DYS…
   light: TrafficLight
   gender?: Gender // unset until the user picks one
-  delegate: boolean // class representative (shown with a crown)
+  delegate: boolean // class representative (shown with a gold crown)
+  deputy: boolean // deputy class representative (silver crown); a student is never both
   role: 'student' | 'aesh'
   supports: string[] // ids of the students an AESH supports
 }
@@ -97,6 +98,7 @@ export const newStudent = (firstName: string, lastName = ''): Student => ({
   annotations: [],
   light: 'green',
   delegate: false,
+  deputy: false,
   role: 'student',
   supports: [],
 })
@@ -139,6 +141,7 @@ export const normalizeStudent = (s: any): Student => ({
   light: TRAFFIC_LIGHTS.includes(s.light) ? s.light : 'green',
   gender: s.gender === 'girl' || s.gender === 'boy' ? s.gender : undefined,
   delegate: s.delegate === true,
+  deputy: s.deputy === true && s.delegate !== true,
   role: s.role === 'aesh' ? 'aesh' : 'student',
   supports: Array.isArray(s.supports) ? s.supports : [],
 })

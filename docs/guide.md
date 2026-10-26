@@ -91,7 +91,7 @@ Sur une carte : l'**anneau coloré** est le feu tricolore, la lettre en haut à 
 
 ## Les classes (les élèves)
 
-Onglet **Classes (élèves)**.
+Onglet **Classes (élèves)**. La liste de vos classes est à gauche : un clic passe de l'une à l'autre. Le champ **Chercher un élève** (sans tenir compte des accents ni des majuscules) filtre les fiches de la classe affichée et indique, pour chaque classe, combien d'élèves correspondent.
 
 ![Fiches des élèves](img/05-classes.png)
 
@@ -100,7 +100,8 @@ Pour chaque élève, vous pouvez :
 - **Photo** : cliquez sur le rond ou glissez-y une image depuis votre ordinateur. La photo est recadrée en carré et réduite (≈ 200 px) : elle reste légère. Sans photo, un avatar neutre s'affiche ; **Avatar au hasard** dessine un personnage à la place.
 - **Prénom et nom**.
 - **Genre** : Fille ou Garçon (facultatif ; recliquez pour retirer).
-- **Délégué** : le bouton 👑 ajoute une couronne à l'élève sur le plan.
+- **Délégué** : le bouton 👑 ajoute une couronne dorée à l'élève sur le plan.
+- **Suppléant** : le bouton « Suppléant » ajoute une couronne argentée. Un élève ne peut pas être à la fois délégué et suppléant : choisir l'un retire l'autre.
 - **Feu tricolore** : 🟢 sympa, 🟠 à surveiller, 🔴 perturbateur.
 - **Annotations** : PAP, PPS, PAI, PPRE, DYS, HPI, UPE2A, TDAH, ou un libellé de votre choix (« Autre… »).
 
@@ -155,6 +156,12 @@ Dans **Placer**, choisissez une façon de répartir les personnes qui n'ont pas 
 - **Répartir les couleurs (tricolore)** : évite de rapprocher les élèves rouges et oranges.
 
 Les personnes déjà placées ne bougent pas.
+
+### Voir le détail d'un élève
+
+**Cliquez** sur un élève (sur le plan ou dans « À placer ») sans le déplacer : sa fiche s'ouvre en haut du menu de gauche. Vous y changez en un clic son statut de délégué ou de suppléant et son feu tricolore, ou vous le retirez de sa place. Ces changements concernent la classe, donc tous ses plans.
+
+![Fiche d'un élève sur le plan](img/04b-fiche-eleve.png)
 
 ### Appliquer un plan à une autre salle
 

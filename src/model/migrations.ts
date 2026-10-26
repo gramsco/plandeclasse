@@ -7,8 +7,9 @@
  *  2: V2 — traffic light, AESH, gender, annotations; rules, status and notes per plan
  *  3: English field and value names (`salles` → `rooms`, `eleves` → `students`, …)
  *  4: V3 — students can be class representatives (`delegate`)
+ *  5: V4 — students can be deputy class representatives (`deputy`)
  */
-export const DATA_VERSION = 4
+export const DATA_VERSION = 5
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -129,6 +130,15 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
     classes: (d.classes as any[]).map((c) => ({
       ...c,
       students: (c.students ?? []).map((s: any) => ({ ...s, delegate: false })),
+    })),
+    rooms: d.rooms,
+    plans: d.plans,
+  }),
+
+  4: (d) => ({
+    classes: (d.classes as any[]).map((c) => ({
+      ...c,
+      students: (c.students ?? []).map((s: any) => ({ ...s, deputy: false })),
     })),
     rooms: d.rooms,
     plans: d.plans,

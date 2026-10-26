@@ -121,3 +121,36 @@ export const legacyFile = (version: 1 | 2) => ({
   ...(version === 1 ? LEGACY_V1 : { ...LEGACY_V2, exporteLe: '2026-01-01' }),
   photos: {},
 })
+
+/** Data version 4 (class representatives, before deputies). */
+export const LEGACY_V4 = {
+  ...LEGACY_V3,
+  classes: [
+    {
+      id: 'c1',
+      name: '6e A',
+      students: [
+        {
+          id: 'e1',
+          firstName: 'Ada',
+          lastName: 'Lovelace',
+          annotations: [],
+          light: 'green',
+          delegate: true,
+          role: 'student',
+          supports: [],
+        },
+        {
+          id: 'e2',
+          firstName: 'Sam',
+          lastName: '',
+          annotations: [],
+          light: 'green',
+          delegate: false,
+          role: 'aesh',
+          supports: ['e1'],
+        },
+      ],
+    },
+  ],
+}

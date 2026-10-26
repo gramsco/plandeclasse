@@ -1,6 +1,7 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { COMMON_ANNOTATIONS, fullName, isAesh, parseStudentList, type SchoolClass, type Student } from '../model/types'
 import { addFakePhotos, generateAvatar } from '../storage/avatar'
+import { matchesSearch } from '../model/search'
 import { resizePhoto } from '../storage/photo'
 import { useApp } from '../store'
 import { NeutralAvatar } from './NeutralAvatar'
@@ -12,7 +13,7 @@ const genderSummary = (students: Student[]) => {
   return girls + boys > 0 ? ` (${girls} filles, ${boys} garçons)` : ''
 }
 
-export function StudentsPanel({ schoolClass }: { schoolClass: SchoolClass }) {
+export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: SchoolClass; query?: string }) {
   const { addStudent, addAesh, addStudents, shuffleLights } = useApp()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -20,6 +21,8 @@ export function StudentsPanel({ schoolClass }: { schoolClass: SchoolClass }) {
   const [bulkText, setBulkText] = useState('')
   const students = schoolClass.students.filter((s) => !isAesh(s))
   const aesh = schoolClass.students.filter(isAesh)
+  const shownStudents = students.filter((s) => matchesSearch(fullName(s), query))
+  const shownAesh = aesh.filter((s) => matchesSearch(fullName(s), query))
 
   const submit = (add: (firstName: string, lastName: string) => void) => {
     if (!firstName.trim()) return
@@ -95,15 +98,18 @@ export function StudentsPanel({ schoolClass }: { schoolClass: SchoolClass }) {
         </div>
       )}
       <ul className="student-grid">
-        {students.map((s) => (
+        {shownStudents.map((s) => (
           <StudentCard key={s.id} student={s} schoolClass={schoolClass} />
         ))}
       </ul>
-      {aesh.length > 0 && (
+      {query.trim() && shownStudents.length + shownAesh.length === 0 && (
+        <p className="empty">Personne ne correspond à « {query.trim()} » dans cette classe.</p>
+      )}
+      {shownAesh.length > 0 && (
         <>
           <h3>AESH</h3>
           <ul className="student-grid">
-            {aesh.map((s) => (
+            {shownAesh.map((s) => (
               <StudentCard key={s.id} student={s} schoolClass={schoolClass} />
             ))}
           </ul>
@@ -123,6 +129,7 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
     setLight,
     setGender,
     setDelegate,
+    setDeputy,
     setSupports,
     toggleAnnotation,
   } = useApp()
@@ -218,6 +225,15 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
             onClick={() => setDelegate(student.id, !student.delegate)}
           >
             👑 Délégué
+          </button>
+          <button
+            role="switch"
+            aria-checked={student.deputy}
+            className={`delegate-toggle deputy ${student.deputy ? 'active' : ''}`}
+            title="Suppléant du délégué de la classe"
+            onClick={() => setDeputy(student.id, !student.deputy)}
+          >
+            Suppléant
           </button>
           <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
         </>

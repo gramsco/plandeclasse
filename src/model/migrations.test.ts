@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LEGACY_V1, LEGACY_V2, LEGACY_V3 } from './legacyFixtures'
+import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4 } from './legacyFixtures'
 import { DATA_VERSION, migrate, toRawData } from './migrations'
 
 describe('migrations', () => {
@@ -20,6 +20,7 @@ describe('migrations', () => {
           role: 'student',
           supports: [],
           delegate: false,
+          deputy: false,
         },
         {
           id: 'e2',
@@ -32,6 +33,7 @@ describe('migrations', () => {
           role: 'aesh',
           supports: ['e1'],
           delegate: false,
+          deputy: false,
         },
       ],
     })
@@ -80,6 +82,15 @@ describe('migrations', () => {
       expect.objectContaining({ firstName: 'Sam', delegate: false }),
     ])
     expect(migrate(LEGACY_V3, 3).plans).toEqual(LEGACY_V3.plans)
+  })
+
+  it('keeps delegates and marks nobody as a deputy from data version 4 to 5', () => {
+    const data = migrate(LEGACY_V4, 4) as { classes: { students: { delegate: boolean; deputy: boolean }[] }[] }
+    expect(data.classes[0].students).toEqual([
+      expect.objectContaining({ delegate: true, deputy: false }),
+      expect.objectContaining({ delegate: false, deputy: false }),
+    ])
+    expect(migrate(LEGACY_V4, 4).plans).toEqual(LEGACY_V4.plans)
   })
 
   it('chains from version 1 up to the current version', () => {

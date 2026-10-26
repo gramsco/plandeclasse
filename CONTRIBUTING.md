@@ -99,8 +99,10 @@ Before migrating, the app keeps a copy of the old data in the `meta` store (`pre
   `chore:`. One logical change per commit.
 - **The version follows the commit** (semver, `.githooks/post-commit`, see `scripts/bump-version.mjs`): `feat:` → minor,
   `fix:` / `perf:` → patch, `type!:` or a `BREAKING CHANGE:` line → major (minor while the version is 0.x), other types
-  → unchanged. The hook updates `package.json`, `package-lock.json` and adds a heading to `docs/release-notes.md`, then
-  folds that into the commit with an amend. Rewrite the new heading in French, for teachers. Skip with
+  → unchanged. The hook updates `package.json`, `package-lock.json` and `docs/release-notes.md`, then folds that into
+  the commit with an amend. **Write the release notes before committing**, in French and for teachers, under a
+  `## À venir` heading at the top of `docs/release-notes.md`: the hook turns it into the new version's heading. If there
+  is none, the hook adds a `(à rédiger)` placeholder, and `npm run check` fails until it is rewritten. Skip with
   `SKIP_VERSION_BUMP=1`; a version you changed by hand in the commit is left alone; amended commits are not bumped again.
 - `docs/release-notes.md` is what users read when they click the version number in the footer.
 - Pull requests use the template in `.github/pull_request_template.md`.
