@@ -17,6 +17,7 @@ Plan de classe sert à préparer le placement des élèves dans une salle : phot
 9. [Sécurité et confidentialité des données](#sécurité-et-confidentialité-des-données)
 10. [Questions fréquentes](#questions-fréquentes)
 11. [Raccourcis clavier](#raccourcis-clavier)
+12. [À propos de cet outil et de l'intelligence artificielle](#à-propos-de-cet-outil-et-de-lintelligence-artificielle)
 
 ---
 
@@ -298,3 +299,18 @@ Dans l'éditeur de salle :
 | **Échap** | Désélectionner |
 
 Dans un plan : **Échap** annule un glisser en cours.
+
+---
+
+## À propos de cet outil et de l'intelligence artificielle
+
+**Cette application a été réalisée avec l'aide d'une intelligence artificielle** : Claude Sonnet 5.5, développé par Anthropic, a servi d'assistant pour écrire le code et ce guide.
+
+**J'en assume pourtant la pleine responsabilité.** L'IA est un outil ; je suis l'auteur et le responsable de ce site : chaque ligne de code publiée ici est sous ma responsabilité, de même que son contenu et ses éventuelles erreurs.
+
+Quelques précisions utiles :
+
+- **L'application n'utilise aucune intelligence artificielle.** Elle ne communique avec aucun service d'IA, et vos données d'élèves ne sont jamais transmises à qui que ce soit (voir [la section sécurité](#sécurité-et-confidentialité-des-données)).
+- **Le logiciel est fourni « en l'état », sans garantie.** Vérifiez toujours un plan avant de le mettre en œuvre ou de l'afficher, et gardez des sauvegardes ([export `.classe`](#sauvegarder-et-transférer-ses-données)).
+- **Le code est public et surveillé automatiquement** : mises à jour des dépendances, recherche de vulnérabilités et de secrets, analyse statique du code. Le détail est dans la [politique de sécurité](https://github.com/gramsco/plandeclasse/blob/main/SECURITY.md).
+- **Une erreur, une faille, une idée ?** Signalez-la sur [GitHub](https://github.com/gramsco/plandeclasse). Pour une faille de sécurité, utilisez le signalement privé décrit dans la politique de sécurité.

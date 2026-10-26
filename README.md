@@ -5,6 +5,10 @@ Application web pour préparer des plans de classe : élèves avec photos, salle
 - **Utiliser** : https://gramsco.github.io/plandeclasse/
 - **Guide d'utilisation** (installation, sécurité des données…) : [docs/guide.md](docs/guide.md)
 
+## Sécurité
+
+Voir [SECURITY.md](SECURITY.md) : signalement d'une faille et contrôles automatisés (Dependabot, Trivy, CodeQL, Scorecard).
+
 ## Développement
 
 ```bash
