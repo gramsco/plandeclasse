@@ -13,6 +13,7 @@ import { addFakePhotos, generateAvatar } from '../storage/avatar'
 import { matchesSearch } from '../model/search'
 import { resizePhoto } from '../storage/photo'
 import { useApp } from '../store'
+import { askConfirm, askText } from './ask'
 import { Crown, ICON, X } from './icons'
 import { NeutralAvatar } from './NeutralAvatar'
 import { TrafficLightPicker } from './TrafficLightPicker'
@@ -34,9 +35,11 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
   const shownStudents = students.filter((s) => matchesSearch(fullName(s), query))
   const shownAesh = aesh.filter((s) => matchesSearch(fullName(s), query))
 
-  const submit = (add: (firstName: string, lastName: string) => void) => {
-    if (!firstName.trim()) return
-    add(firstName.trim(), lastName.trim())
+  // An AESH is often added before anyone knows their name: it gets a default one to rename later.
+  const submit = (add: (firstName: string, lastName: string) => void, fallbackName?: string) => {
+    const first = firstName.trim() || fallbackName
+    if (!first) return
+    add(first, lastName.trim())
     setFirstName('')
     setLastName('')
   }
@@ -63,7 +66,7 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
         <button type="submit">Ajouter un élève</button>
         <button
           type="button"
-          onClick={() => submit(addAesh)}
+          onClick={() => submit(addAesh, 'AESH')}
           title="Ajoute une personne qui accompagne un ou plusieurs élèves"
         >
           Ajouter un AESH
@@ -77,9 +80,13 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
         <div className="row">
           <button
             type="button"
-            onClick={() =>
-              confirm('Remplacer les feux de tous les élèves par une répartition aléatoire ?') && shuffleLights()
-            }
+            onClick={async () => {
+              const confirmed = await askConfirm('Remplacer les feux de tous les élèves ?', {
+                message: 'Ils seront remplacés par une répartition aléatoire.',
+                confirmLabel: 'Remplacer',
+              })
+              if (confirmed) shuffleLights()
+            }}
             title="1-2 rouges, 5-6 oranges, le reste vert (pour tester)"
           >
             Feux aléatoires
@@ -120,9 +127,10 @@ export function StudentsPanel({ schoolClass, query = '' }: { schoolClass: School
       {query.trim() && shownStudents.length + shownAesh.length === 0 && (
         <p className="empty">Personne ne correspond à « {query.trim()} » dans cette classe.</p>
       )}
-      {shownAesh.length > 0 && (
+      {(shownAesh.length > 0 || !query.trim()) && (
         <>
-          <h3>AESH</h3>
+          <h3>AESH de la classe</h3>
+          {shownAesh.length === 0 && <p className="hint">Aucun AESH. Utilisez « Ajouter un AESH » ci-dessus.</p>}
           <ul className="student-grid">
             {shownAesh.map((s) => (
               <StudentCard key={s.id} student={s} schoolClass={schoolClass} />
@@ -314,9 +322,11 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
               <select
                 aria-label="Ajouter une annotation"
                 value=""
-                onChange={(e) => {
+                onChange={async (e) => {
                   const label =
-                    e.target.value === '__other' ? prompt('Annotation ?')?.trim().toUpperCase() : e.target.value
+                    e.target.value === '__other'
+                      ? (await askText('Nouvelle annotation', 'Annotation'))?.toUpperCase()
+                      : e.target.value
                   if (label && !student.annotations.includes(label)) toggleAnnotation(student.id, label)
                 }}
               >
@@ -335,9 +345,17 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
           <div className="actions">
             <button
               title="Dessine un visage au hasard à la place de la photo"
-              onClick={async () =>
-                setPhoto(student.id, await generateAvatar(Math.floor(Math.random() * 1_000_000), student.gender))
-              }
+              onClick={async () => {
+                if (
+                  photoUrl &&
+                  !(await askConfirm('Remplacer la photo ?', {
+                    message: 'La photo actuelle sera remplacée par un avatar au hasard.',
+                    confirmLabel: 'Remplacer',
+                  }))
+                )
+                  return
+                await setPhoto(student.id, await generateAvatar(Math.floor(Math.random() * 1_000_000), student.gender))
+              }}
             >
               Avatar au hasard
             </button>

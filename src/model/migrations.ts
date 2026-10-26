@@ -8,8 +8,9 @@
  *  3: English field and value names (`salles` → `rooms`, `eleves` → `students`, …)
  *  4: V3 — students can be class representatives (`delegate`)
  *  5: V4 — students can be deputy class representatives (`deputy`)
+ *  6: rules of type `together` (older releases would silently drop them)
  */
-export const DATA_VERSION = 5
+export const DATA_VERSION = 6
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -143,6 +144,9 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
     rooms: d.rooms,
     plans: d.plans,
   }),
+
+  // Only a new kind of rule: nothing to rewrite. The bump makes older builds refuse the data instead of dropping it.
+  5: (d) => d,
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

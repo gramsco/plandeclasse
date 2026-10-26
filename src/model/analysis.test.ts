@@ -46,6 +46,15 @@ describe('analyze', () => {
     expect(result.links).toHaveLength(1)
   })
 
+  it('"together" rule: warns when the placed members are far apart, silent when close', () => {
+    const rules: Rule[] = [{ id: newId(), type: 'together', students: [a.id, b.id, c.id] }]
+    const far = analyze(plan({ [seat1.seatId]: a.id, [farSeat.seatId]: b.id }, rules), schoolClass, room)
+    expect(far.alerts.map((x) => x.level)).toEqual(['warning'])
+    expect(far.alerts[0].studentIds).toEqual([a.id, b.id])
+    const close = analyze(plan({ [seat1.seatId]: a.id, [seat2.seatId]: b.id }, rules), schoolClass, room)
+    expect(close.alerts).toEqual([])
+  })
+
   it('"colors" rule: red next to red', () => {
     a.light = 'red'
     b.light = 'red'

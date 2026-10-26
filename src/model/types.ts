@@ -11,6 +11,7 @@ export const TRAFFIC_LIGHT_COLOR_NAMES: Record<TrafficLight, string> = { green: 
 
 export type Rule =
   | { id: string; type: 'separate'; studentA: string; studentB: string }
+  | { id: string; type: 'together'; students: string[] } // 2 or 3 students who should sit close to each other
   | { id: string; type: 'colors'; a: TrafficLight; b: TrafficLight }
   | { id: string; type: 'influence'; student: string; near: string; becomes: TrafficLight }
 
@@ -161,15 +162,23 @@ export const normalizeRoom = (r: any): Room => ({
   furniture: Array.isArray(r.furniture) ? r.furniture : [],
 })
 
+const normalizeRule = (r: any): Rule[] => {
+  if (!r || !['separate', 'together', 'colors', 'influence'].includes(r.type)) return []
+  if (r.type !== 'together') return [r]
+  // Rendering and analysis assume a group of 2 or 3 distinct ids: a damaged one is dropped.
+  const students: string[] = Array.isArray(r.students)
+    ? [...new Set<string>(r.students.filter((id: unknown): id is string => typeof id === 'string'))]
+    : []
+  return students.length >= 2 && students.length <= 3 ? [{ id: String(r.id), type: 'together', students }] : []
+}
+
 export const normalizePlan = (p: any): Plan => ({
   id: String(p.id),
   name: String(p.name ?? 'Plan'),
   classId: String(p.classId),
   roomId: String(p.roomId),
   assignments: p.assignments && typeof p.assignments === 'object' ? p.assignments : {},
-  rules: Array.isArray(p.rules)
-    ? p.rules.filter((r: any) => r && ['separate', 'colors', 'influence'].includes(r.type))
-    : [],
+  rules: Array.isArray(p.rules) ? p.rules.flatMap(normalizeRule) : [],
   status: p.status in PLAN_STATUS_LABELS ? p.status : 'draft',
   notes: String(p.notes ?? ''),
   parentId: p.parentId ? String(p.parentId) : undefined,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4 } from './legacyFixtures'
+import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4, LEGACY_V5 } from './legacyFixtures'
 import { DATA_VERSION, migrate, toRawData } from './migrations'
 
 describe('migrations', () => {
@@ -91,6 +91,12 @@ describe('migrations', () => {
       expect.objectContaining({ delegate: false, deputy: false }),
     ])
     expect(migrate(LEGACY_V4, 4).plans).toEqual(LEGACY_V4.plans)
+  })
+
+  it('keeps the rules untouched from data version 5 to 6', () => {
+    const data = migrate(LEGACY_V5, 5)
+    expect(data.plans).toEqual(LEGACY_V5.plans)
+    expect(data.classes).toEqual(LEGACY_V5.classes)
   })
 
   it('chains from version 1 up to the current version', () => {

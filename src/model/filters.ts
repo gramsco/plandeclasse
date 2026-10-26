@@ -26,6 +26,7 @@ export function matchesFilter(student: Student, filter: StudentFilter, light: Tr
 /** The students a rule is about: the ones it names, or every student of the colours it mentions. */
 export function ruleStudentIds(rule: Rule, schoolClass: SchoolClass): string[] {
   if (rule.type === 'separate') return [rule.studentA, rule.studentB]
+  if (rule.type === 'together') return rule.students
   if (rule.type === 'influence') return [rule.student, rule.near]
   return schoolClass.students.filter((s) => !isAesh(s) && (s.light === rule.a || s.light === rule.b)).map((s) => s.id)
 }

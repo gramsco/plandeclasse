@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { fullName, type Student } from '../model/types'
 import { matchesSearch } from '../model/search'
 import { useApp } from '../store'
+import { askConfirm, askText } from './ask'
 import { NewClassDialog } from './dialogs'
+import { ListNav } from './ListNav'
 import { StudentsPanel } from './StudentsPanel'
 
 export function ClassesView() {
@@ -21,8 +23,8 @@ export function ClassesView() {
         {schoolClass && (
           <>
             <button
-              onClick={() => {
-                const name = prompt('Nouveau nom ?', schoolClass.name)?.trim()
+              onClick={async () => {
+                const name = await askText('Renommer la classe', 'Nouveau nom', schoolClass.name)
                 if (name) renameClass(schoolClass.id, name)
               }}
             >
@@ -31,10 +33,13 @@ export function ClassesView() {
             <button onClick={() => void duplicateClass(schoolClass.id)}>Dupliquer</button>
             <button
               className="danger"
-              onClick={() =>
-                confirm(`Supprimer « ${schoolClass.name} », ses photos et ${planCount} plan(s) ?`) &&
-                deleteClass(schoolClass.id)
-              }
+              onClick={async () => {
+                const confirmed = await askConfirm(`Supprimer « ${schoolClass.name} » ?`, {
+                  message: `Ses élèves, leurs photos et ${planCount} plan(s) seront supprimés.`,
+                  confirmLabel: 'Supprimer',
+                })
+                if (confirmed) deleteClass(schoolClass.id)
+              }}
             >
               Supprimer
             </button>
@@ -42,32 +47,29 @@ export function ClassesView() {
         )}
       </div>
       <div className="classes-layout">
-        <nav className="class-list" aria-label="Classes">
-          <input
-            type="search"
-            aria-label="Chercher un élève"
-            placeholder="Chercher un élève…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <ul>
-            {classes.map((c) => {
-              const count = searching ? matchCount(c.students) : 0
-              return (
-                <li key={c.id}>
-                  <button
-                    className={`${c.id === currentClassId ? 'active' : ''} ${searching && count === 0 ? 'no-match' : ''}`}
-                    aria-current={c.id === currentClassId ? 'true' : undefined}
-                    onClick={() => selectClass(c.id)}
-                  >
-                    <span>{c.name}</span>
-                    <small>{searching ? `${count} trouvé${count > 1 ? 's' : ''}` : c.students.length}</small>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
+        <ListNav
+          label="Classes"
+          currentId={currentClassId}
+          onSelect={selectClass}
+          header={
+            <input
+              type="search"
+              aria-label="Chercher un élève"
+              placeholder="Chercher un élève…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          }
+          items={classes.map((c) => {
+            const count = searching ? matchCount(c.students) : 0
+            return {
+              id: c.id,
+              label: c.name,
+              detail: searching ? `${count} trouvé${count > 1 ? 's' : ''}` : String(c.students.length),
+              muted: searching && count === 0,
+            }
+          })}
+        />
         <main>
           {schoolClass ? (
             <StudentsPanel schoolClass={schoolClass} query={query} />

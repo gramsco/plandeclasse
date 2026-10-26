@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { buildFile, download, readFile, type ExportFile } from '../io/file'
 import { storage, useApp } from '../store'
+import { askConfirm } from './ask'
 import { Download, ICON, Upload } from './icons'
 import { Modal } from './Modal'
 
@@ -43,7 +44,13 @@ export function FileMenu({ onExported }: { onExported(): void }) {
 
   const importFile = async (mode: 'merge' | 'replace') => {
     if (!file) return
-    if (mode === 'replace' && !confirm("Tout ce qui est actuellement dans l'application sera supprimé. Continuer ?"))
+    if (
+      mode === 'replace' &&
+      !(await askConfirm('Tout remplacer ?', {
+        message: "Tout ce qui est actuellement dans l'application sera supprimé.",
+        confirmLabel: 'Tout remplacer',
+      }))
+    )
       return
     await state.importData(file, mode)
     setFile(undefined)

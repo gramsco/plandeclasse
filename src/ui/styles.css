@@ -1281,7 +1281,7 @@ footer .link-button {
 
 /* ---- Compact student tiles (Classes): a summary, with the editing controls one click away ---- */
 .student-grid {
-  align-items: start;
+  align-items: stretch;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 .card-head {
@@ -1413,4 +1413,27 @@ button > svg.lucide {
 }
 .tag-gold svg {
   color: #c98f00;
+}
+
+/* ---- Home of the plans view ---- */
+.welcome-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+
+/* Plans and rooms: a strip above the content, since the editors have their own columns. */
+.class-list.strip {
+  width: auto;
+  position: static;
+  padding: 0.5rem 1.25rem 0;
+}
+.class-list.strip ul {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.class-list.strip li button {
+  width: auto;
 }

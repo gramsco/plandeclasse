@@ -38,11 +38,11 @@ const pause = (ms = 400) => page.waitForTimeout(ms)
 
 try {
   await page.goto(URL)
-  await page.getByText('Créer mon premier plan').waitFor()
+  await page.getByText('Créer un plan de classe').waitFor()
   await shot('01-accueil')
 
   // New plan: room template preview
-  await page.getByText('Créer mon premier plan').click()
+  await page.getByText('Créer un plan de classe').click()
   await page.locator('.modal select').first().selectOption('demo')
   await page.locator('.modal select').nth(1).selectOption('template:islands-3x2')
   await page.setViewportSize({ width: 1360, height: 1000 })

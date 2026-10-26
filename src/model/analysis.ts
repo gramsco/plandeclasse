@@ -58,6 +58,21 @@ export type Analysis = {
 
 const SEVERITY: Record<TrafficLight, number> = { green: 0, orange: 1, red: 2 }
 const worse = (a: TrafficLight, b: TrafficLight) => (SEVERITY[b] > SEVERITY[a] ? b : a)
+/** Neighbours for a "together" rule; across an aisle is too far. */
+const CLOSE = new Set<Relation>(['side', 'front', 'diagonal'])
+
+/** True when the members form one group, each one being close to at least another one of the group. */
+function isConnected(members: string[], close: (a: string, b: string) => boolean) {
+  const reached = new Set([members[0]])
+  const queue = [members[0]]
+  for (let current = queue.shift(); current; current = queue.shift())
+    for (const other of members)
+      if (!reached.has(other) && close(current, other)) {
+        reached.add(other)
+        queue.push(other)
+      }
+  return reached.size === members.length
+}
 const levelOf = (r: Relation): Level => (r === 'side' ? 'error' : 'warning')
 
 /** Checks a plan: rule violations, AESH constraints, and the traffic lights once neighbours are taken into account. */
@@ -120,6 +135,16 @@ export function analyze(plan: Plan, schoolClass: SchoolClass, room: Room): Analy
           rel,
           `${name(rule.studentA)} et ${name(rule.studentB)} doivent être séparés`,
         )
+    } else if (rule.type === 'together') {
+      // Members who are not placed are already listed as "to place": only the placed ones can be judged.
+      const members = rule.students.filter((id) => positions.has(id))
+      if (members.length >= 2 && !isConnected(members, (a, b) => CLOSE.has(relationBetween(a, b) as Relation)))
+        alerts.push({
+          id: `together-${rule.id}`,
+          level: 'warning',
+          message: `${members.map(name).join(', ')} devraient être proches`,
+          studentIds: members,
+        })
     } else if (rule.type === 'colors') {
       const ids = placed.filter((id) => effectiveLight[id])
       for (let i = 0; i < ids.length; i++)

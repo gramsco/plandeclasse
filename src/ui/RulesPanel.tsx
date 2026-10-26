@@ -19,9 +19,13 @@ import { Check, ICON, X } from './icons'
 function describeRule(rule: Rule, byId: Map<string, Student>) {
   const name = (id: string) => (byId.get(id) ? fullName(byId.get(id)!) : '?')
   if (rule.type === 'separate') return `${name(rule.studentA)} ≠ ${name(rule.studentB)} (séparés)`
+  if (rule.type === 'together') return `${rule.students.map(name).join(', ')} ensemble (proches)`
   if (rule.type === 'colors') return `${COLOR_NAME[rule.a]} ≠ ${COLOR_NAME[rule.b]} côte à côte`
   return `${name(rule.student)} devient ${COLOR_NAME[rule.becomes]} près de ${name(rule.near)}`
 }
+
+/** A group of more than three can hardly sit together, so the form refuses it. */
+const MAX_TOGETHER = 3
 
 type Props = {
   plan: Plan
@@ -47,7 +51,11 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
   const [lightB, setLightB] = useState<TrafficLight>('red')
   const [becomes, setBecomes] = useState<TrafficLight>('orange')
 
-  const isValid = type === 'colors' || (type === 'separate' ? group.length >= 2 : first && second && first !== second)
+  const isValid =
+    type === 'colors' ||
+    (type === 'separate' && group.length >= 2) ||
+    (type === 'together' && group.length >= 2 && group.length <= MAX_TOGETHER) ||
+    (type === 'influence' && first && second && first !== second)
   const submit = () => {
     if (!isValid) return
     if (type === 'separate') {
@@ -59,6 +67,10 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
       group.forEach((a, i) =>
         group.slice(i + 1).forEach((b) => exists(a, b) || addRule(plan.id, { type, studentA: a, studentB: b })),
       )
+      setGroup([])
+      setSearch('')
+    } else if (type === 'together') {
+      addRule(plan.id, { type, students: group })
       setGroup([])
       setSearch('')
     } else if (type === 'colors') addRule(plan.id, { type, a: lightA, b: lightB })
@@ -137,15 +149,28 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
       </ul>
 
       <div className="rule-form">
-        <select value={type} onChange={(e) => setType(e.target.value as Rule['type'])}>
+        <select
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value as Rule['type'])
+            setGroup([])
+          }}
+        >
           <option value="separate">Séparer des élèves</option>
+          <option value="together">Rapprocher 2 ou 3 élèves</option>
           <option value="colors">Couleurs à ne pas rapprocher</option>
           <option value="influence">Un élève change de couleur près d'un autre</option>
         </select>
-        {type === 'separate' && (
+        {(type === 'separate' || type === 'together') && (
           <details className="supports" open>
             <summary>
-              {group.length ? `${group.length} élèves à séparer les uns des autres` : 'Choisir les élèves à séparer'}
+              {type === 'separate'
+                ? group.length
+                  ? `${group.length} élèves à séparer les uns des autres`
+                  : 'Choisir les élèves à séparer'
+                : group.length
+                  ? `${group.length} élèves à rapprocher`
+                  : 'Choisir 2 ou 3 élèves à rapprocher'}
             </summary>
             <input
               type="search"
@@ -162,6 +187,7 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
                     <input
                       type="checkbox"
                       checked={group.includes(s.id)}
+                      disabled={type === 'together' && !group.includes(s.id) && group.length >= MAX_TOGETHER}
                       onChange={(e) =>
                         setGroup(e.target.checked ? [...group, s.id] : group.filter((id) => id !== s.id))
                       }

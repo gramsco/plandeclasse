@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { randomLights } from './demo'
 import { footprint, roomSeats, seatCenter, snap } from './geometry'
 import { relation } from './analysis'
-import { assign, fillRandomly, purgeAssignments, transposeAssignments } from './plan'
+import { assign, fillRandomly, purgeAssignments, purgeRules, transposeAssignments } from './plan'
 import { createFurniture, findRoomTemplate, ROOM_TEMPLATES } from './rooms'
-import { newSchoolClass, normalizeStudent, type Plan, type Student } from './types'
+import { newSchoolClass, normalizePlan, normalizeStudent, type Plan, type Student } from './types'
 
 describe('geometry', () => {
   it('footprint: a 90° rotation swaps width and height around the centre', () => {
@@ -70,6 +70,29 @@ describe('plan', () => {
     expect(assign(assignments, student1, seat2)).toEqual({ [seat2]: student1, [seat1]: student2 }) // swap
     expect(assign(assignments, student1, null)).toEqual({ [seat2]: student2 })
     expect(assign(assignments, student1, seat1)).toEqual(assignments)
+  })
+
+  it('keeps the remaining members of a "together" group, and drops it below two', () => {
+    const group = newSchoolClass('A', 3)
+    const [x, y, z] = group.students.map((s) => s.id)
+    const rule = (students: string[]) => ({ id: 'r', type: 'together' as const, students })
+    expect(purgeRules([rule([x, y, 'gone'])], group)).toEqual([rule([x, y])])
+    expect(purgeRules([rule([z, 'gone'])], group)).toEqual([])
+  })
+
+  it('drops damaged "together" rules and de-duplicates the members when loading a plan', () => {
+    const loaded = normalizePlan({
+      id: 'p',
+      classId: 'c',
+      roomId: 'r',
+      rules: [
+        { id: 'r1', type: 'together' },
+        { id: 'r2', type: 'together', students: ['a', 'a'] },
+        { id: 'r3', type: 'together', students: ['a', 'b', 'b', 4] },
+        { id: 'r4', type: 'together', students: ['a', 'b', 'c', 'd'] },
+      ],
+    })
+    expect(loaded.rules).toEqual([{ id: 'r3', type: 'together', students: ['a', 'b'] }])
   })
 
   it('purges orphan assignments', () => {

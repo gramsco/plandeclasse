@@ -28,6 +28,7 @@ import {
 import { Crown, Dices, ICON, PanelLeftClose, PanelLeftOpen, Printer, TriangleAlert, X } from './icons'
 import { Modal } from './Modal'
 import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
+import { askConfirm } from './ask'
 import { RoomSvg } from './RoomSvg'
 import { RulesPanel } from './RulesPanel'
 import { TrackingPanel } from './TrackingPanel'
@@ -227,7 +228,15 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                 <button onClick={() => fillPlan(plan.id, strategy)} disabled={unplaced.length === 0}>
                   <Dices size={ICON} /> Placer au hasard les restants
                 </button>
-                <button onClick={() => confirm('Retirer tout le monde de sa place ?') && clearPlan(plan.id)}>
+                <button
+                  onClick={async () => {
+                    const confirmed = await askConfirm('Tout vider ?', {
+                      message: 'Tout le monde sera retiré de sa place.',
+                      confirmLabel: 'Tout vider',
+                    })
+                    if (confirmed) clearPlan(plan.id)
+                  }}
+                >
                   Tout vider
                 </button>
                 <button

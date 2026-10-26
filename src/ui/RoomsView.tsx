@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useApp } from '../store'
+import { askConfirm, askText } from './ask'
 import { NewRoomDialog } from './dialogs'
+import { ListNav } from './ListNav'
 import { RoomEditor } from './RoomEditor'
 
 export function RoomsView() {
@@ -12,19 +14,12 @@ export function RoomsView() {
   return (
     <>
       <div className="toolbar no-print">
-        <select value={currentRoomId ?? ''} onChange={(e) => selectRoom(e.target.value)} disabled={!rooms.length}>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
         <button onClick={() => setDialogOpen(true)}>+ Nouvelle salle</button>
         {room && (
           <>
             <button
-              onClick={() => {
-                const name = prompt('Nouveau nom ?', room.name)?.trim()
+              onClick={async () => {
+                const name = await askText('Renommer la salle', 'Nouveau nom', room.name)
                 if (name) renameRoom(room.id, name)
               }}
             >
@@ -33,15 +28,26 @@ export function RoomsView() {
             <button onClick={() => duplicateRoom(room.id)}>Dupliquer</button>
             <button
               className="danger"
-              onClick={() =>
-                confirm(`Supprimer « ${room.name} » et ${planCount} plan(s) qui l'utilisent ?`) && deleteRoom(room.id)
-              }
+              onClick={async () => {
+                const confirmed = await askConfirm(`Supprimer « ${room.name} » ?`, {
+                  message: `${planCount} plan(s) qui l'utilisent seront supprimés.`,
+                  confirmLabel: 'Supprimer',
+                })
+                if (confirmed) deleteRoom(room.id)
+              }}
             >
               Supprimer
             </button>
           </>
         )}
       </div>
+      <ListNav
+        horizontal
+        label="Salles"
+        currentId={currentRoomId}
+        onSelect={selectRoom}
+        items={rooms.map((r) => ({ id: r.id, label: r.name }))}
+      />
       <main className="wide">
         {room ? (
           <RoomEditor key={room.id} room={room} />

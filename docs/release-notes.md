@@ -3,6 +3,17 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.8.0 — 2026-10-26
+
+- **Fenêtres plus modernes** : plus de boîtes grises du navigateur pour renommer, supprimer ou remplacer. Les
+  questions s'affichent dans l'application.
+- **Plans et salles comme les classes** : la liste est à gauche, un clic suffit pour passer de l'un à l'autre.
+- **Écran d'accueil** : sans plan, « Que voulez-vous faire aujourd'hui ? » propose de créer un plan, une classe ou une
+  salle.
+- **AESH corrigés** : le bouton « Ajouter un AESH » fonctionne même sans nom, et les AESH ont leur section dans la
+  classe.
+- **Nouvelle règle « Rapprocher 2 ou 3 élèves »** : l'inverse de « Séparer des élèves ».
+
 ## 0.7.0 — 2026-10-26
 
 - **Nouvelle apparence « Papier »** : fond crème, vert profond, titres à empattements. Les couleurs du feu tricolore

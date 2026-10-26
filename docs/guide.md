@@ -113,7 +113,7 @@ Les boutons **Photos fictives** et **Feux aléatoires**, rangés sous **Outils d
 
 ### Les AESH
 
-**Ajouter un AESH** crée une personne qui n'est pas un élève. Ouvrez sa fiche avec **Modifier** et choisissez les élèves qu'elle accompagne :
+**Ajouter un AESH** crée une personne qui n'est pas un élève (inutile de saisir un nom : elle s'appelle « AESH » jusqu'à ce que vous la renommiez). Les AESH sont rangés dans la section **AESH de la classe**, sous les élèves. Ouvrez sa fiche avec **Modifier** et choisissez les élèves qu'elle accompagne :
 
 ![Fiche d'un AESH](img/06-aesh.png)
 
@@ -123,7 +123,7 @@ Un AESH se place comme un élève, sur une place libre ou sur une « chaise d'ad
 
 ## Les salles (le lieu)
 
-Onglet **Salles**. Vous y créez et modifiez les salles ; un plan se contente de les utiliser.
+Onglet **Salles**. La liste des salles est à gauche, comme pour les classes et les plans. Vous y créez et modifiez les salles ; un plan se contente de les utiliser.
 
 - **Ajouter** une table individuelle, une table double, un îlot de 4, une chaise d'adulte ou le bureau du prof.
 - **Déplacer** en glissant. Les tables s'aimantent entre elles et à la grille ; gardez **Alt** enfoncé pour les placer librement.
@@ -174,6 +174,7 @@ Les personnes déjà placées ne bougent pas.
 Dans **Règles**, vous écrivez ce qui est à éviter pour *ce* plan :
 
 - **Séparer des élèves** : cochez autant d'élèves que vous voulez, ils seront séparés les uns des autres ;
+- **Rapprocher 2 ou 3 élèves** : l'inverse de la règle précédente, une alerte orange vous prévient s'ils ne sont pas voisins (côte à côte, devant/derrière ou en diagonale) ;
 - **Couleurs à ne pas rapprocher** (par exemple rouge avec rouge) ;
 - **Un élève change de couleur près d'un autre** (un vert devient orange près de tel élève : le feu s'affiche alors avec un ▲).
 

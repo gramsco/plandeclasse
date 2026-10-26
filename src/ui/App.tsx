@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { requestPersistence } from '../storage/indexeddb'
 import { useApp, type View } from '../store'
+import { AskHost } from './ask'
 import { ClassesView } from './ClassesView'
 import { getLastExport, FileMenu } from './FileMenu'
 import { HelpView } from './HelpView'
@@ -92,6 +93,7 @@ export function App() {
           </svg>
         </a>
       </footer>
+      <AskHost />
       {notesOpen && <ReleaseNotesDialog onClose={() => setNotesOpen(false)} />}
     </div>
   )

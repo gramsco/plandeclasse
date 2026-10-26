@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { PLAN_STATUS_LABELS } from '../model/types'
 import { useApp } from '../store'
-import { NewPlanDialog } from './dialogs'
+import { askConfirm, askText } from './ask'
+import { NewClassDialog, NewPlanDialog, NewRoomDialog } from './dialogs'
+import { ListNav } from './ListNav'
 import { PlanEditor } from './PlanEditor'
+
+type Dialog = 'plan' | 'class' | 'room'
 
 export function PlansView() {
   const { plans, currentPlanId, selectPlan, renamePlan, deletePlan, classes, rooms, setView } = useApp()
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialog, setDialog] = useState<Dialog>()
   const plan = plans.find((p) => p.id === currentPlanId)
   const schoolClass = plan && classes.find((c) => c.id === plan.classId)
   const room = plan && rooms.find((r) => r.id === plan.roomId)
@@ -14,21 +18,14 @@ export function PlansView() {
   return (
     <>
       <div className="toolbar no-print">
-        <select value={currentPlanId ?? ''} onChange={(e) => selectPlan(e.target.value)} disabled={!plans.length}>
-          {plans.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.status === 'adopted' ? `✓ ${p.name}` : `[${PLAN_STATUS_LABELS[p.status]}] ${p.name}`}
-            </option>
-          ))}
-        </select>
-        <button className="primary" onClick={() => setDialogOpen(true)}>
+        <button className="primary" onClick={() => setDialog('plan')}>
           + Nouveau plan
         </button>
         {plan && (
           <>
             <button
-              onClick={() => {
-                const name = prompt('Nouveau nom ?', plan.name)?.trim()
+              onClick={async () => {
+                const name = await askText('Renommer le plan', 'Nouveau nom', plan.name)
                 if (name) renamePlan(plan.id, name)
               }}
             >
@@ -36,7 +33,12 @@ export function PlansView() {
             </button>
             <button
               className="danger"
-              onClick={() => confirm(`Supprimer le plan « ${plan.name} » ?`) && deletePlan(plan.id)}
+              onClick={async () => {
+                const confirmed = await askConfirm(`Supprimer le plan « ${plan.name} » ?`, {
+                  confirmLabel: 'Supprimer',
+                })
+                if (confirmed) deletePlan(plan.id)
+              }}
             >
               Supprimer
             </button>
@@ -46,19 +48,39 @@ export function PlansView() {
           </>
         )}
       </div>
+      {plans.length > 0 && (
+        <ListNav
+          horizontal
+          label="Plans"
+          currentId={currentPlanId}
+          onSelect={selectPlan}
+          items={plans.map((p) => ({
+            id: p.id,
+            label: p.status === 'adopted' ? `✓ ${p.name}` : p.name,
+            detail: p.status === 'adopted' ? undefined : PLAN_STATUS_LABELS[p.status],
+          }))}
+        />
+      )}
       <main className="wide">
         {plan && schoolClass && room ? (
           <PlanEditor key={plan.id} plan={plan} schoolClass={schoolClass} room={room} />
         ) : (
           <div className="welcome">
-            <h2>Bienvenue</h2>
+            <h2>Que voulez-vous faire aujourd'hui ?</h2>
             <p>
               Un <b>plan</b> place une <b>classe</b> (vos élèves) dans une <b>salle</b> (le lieu).
             </p>
-            <p>Choisissez un modèle de salle, indiquez le nombre d'élèves, et c'est prêt à remplir.</p>
-            <button className="primary big" onClick={() => setDialogOpen(true)}>
-              Créer mon premier plan
-            </button>
+            <div className="welcome-actions">
+              <button className="primary big" onClick={() => setDialog('plan')}>
+                Créer un plan de classe
+              </button>
+              <button className="big" onClick={() => setDialog('class')}>
+                Ajouter une classe
+              </button>
+              <button className="big" onClick={() => setDialog('room')}>
+                Ajouter une salle
+              </button>
+            </div>
             <p>
               <button className="link-button" onClick={() => setView('help')}>
                 Lire le guide d'utilisation
@@ -67,7 +89,9 @@ export function PlansView() {
           </div>
         )}
       </main>
-      {dialogOpen && <NewPlanDialog onClose={() => setDialogOpen(false)} />}
+      {dialog === 'plan' && <NewPlanDialog onClose={() => setDialog(undefined)} />}
+      {dialog === 'class' && <NewClassDialog onClose={() => setDialog(undefined)} />}
+      {dialog === 'room' && <NewRoomDialog onClose={() => setDialog(undefined)} />}
     </>
   )
 }

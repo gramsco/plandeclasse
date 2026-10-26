@@ -154,3 +154,17 @@ export const LEGACY_V4 = {
     },
   ],
 }
+
+/** Data version 5 (before the "together" rule), with one rule of each older kind. */
+export const LEGACY_V5 = {
+  ...LEGACY_V4,
+  plans: [
+    {
+      ...LEGACY_V4.plans[0],
+      rules: [
+        { id: 'r1', type: 'separate', studentA: 'e1', studentB: 'e2' },
+        { id: 'r2', type: 'colors', a: 'red', b: 'orange' },
+      ],
+    },
+  ],
+}

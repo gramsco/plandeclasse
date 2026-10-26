@@ -149,12 +149,16 @@ export function transposeAssignments(assignments: Record<string, string>, from: 
   return result
 }
 
-/** Drops the rules that mention a student who no longer exists. */
+/** Drops the rules that mention a student who no longer exists (a group keeps its remaining members). */
 export function purgeRules(rules: Rule[], schoolClass: SchoolClass | undefined): Rule[] {
   const ids = new Set(schoolClass?.students.map((s) => s.id))
-  return rules.filter((r) => {
-    if (r.type === 'separate') return ids.has(r.studentA) && ids.has(r.studentB)
-    if (r.type === 'influence') return ids.has(r.student) && ids.has(r.near)
-    return true
+  return rules.flatMap((r): Rule[] => {
+    if (r.type === 'together') {
+      const students = r.students.filter((id) => ids.has(id))
+      return students.length >= 2 ? [{ ...r, students }] : []
+    }
+    if (r.type === 'separate') return ids.has(r.studentA) && ids.has(r.studentB) ? [r] : []
+    if (r.type === 'influence') return ids.has(r.student) && ids.has(r.near) ? [r] : []
+    return [r]
   })
 }
