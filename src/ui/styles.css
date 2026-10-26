@@ -1,12 +1,18 @@
 /* ---- Base ---- */
 :root {
-  --bg: #f6f7f9;
-  --card: #fff;
-  --ink: #1f2933;
-  --muted: #6b7785;
-  --accent: #3b6fd4;
+  /* "Papier": warm notebook paper, a deep green accent, serif headings. */
+  --bg: #f7f2e8;
+  --card: #fffdf8;
+  --ink: #2a2520;
+  --muted: #7a6f60;
+  --accent: #2c6e5b;
+  --accent-soft: #e3efe9;
   --danger: #c0392b;
-  --line: #dfe3e8;
+  --line: #e4d9c6;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 0 rgb(120 100 60 / 10%);
+  --heading-font: ui-serif, Georgia, 'Times New Roman', serif;
   --light-green: #3fae5a;
   --light-orange: #f0a020;
   --light-red: #d9453b;
@@ -24,6 +30,10 @@
 body {
   margin: 0;
   background: var(--bg);
+}
+h1,
+h2 {
+  font-family: var(--heading-font);
 }
 h2 small {
   color: var(--muted);
@@ -50,7 +60,7 @@ textarea {
   font: inherit;
   padding: 0.4rem 0.7rem;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--card);
   color: inherit;
 }
@@ -158,12 +168,12 @@ button.big {
   border: none;
   background: none;
   padding: 0.5rem 0.9rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   color: var(--muted);
 }
 .tabs button.active {
-  background: #e8eefb;
+  background: var(--accent-soft);
   color: var(--accent);
 }
 .file-menu {
@@ -253,7 +263,7 @@ footer .link-button {
   background: #1f2933;
   color: #fff;
   padding: 0.6rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--radius);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .pwa-banner button {
@@ -283,7 +293,7 @@ footer .link-button {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -374,7 +384,7 @@ footer .link-button {
   padding: 0.15rem 0.3rem;
 }
 .gender-picker button.active {
-  background: #e8eefb;
+  background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
@@ -409,7 +419,7 @@ footer .link-button {
 .tools {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
@@ -455,7 +465,7 @@ footer .link-button {
 .canvas-area {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 0.5rem;
   overflow: auto;
 }
@@ -529,7 +539,7 @@ footer .link-button {
   font-size: 0.85rem;
 }
 .side-tabs button.active {
-  background: #e8eefb;
+  background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -549,12 +559,12 @@ footer .link-button {
 }
 .unplaced {
   border: 2px dashed transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.25rem;
 }
 .unplaced.drop-target {
   border-color: var(--accent);
-  background: #f0f5ff;
+  background: var(--accent-soft);
 }
 .unplaced ul {
   list-style: none;
@@ -572,7 +582,7 @@ footer .link-button {
   gap: 0.5rem;
   padding: 0.25rem 0.4rem;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: grab;
   background: var(--card);
   touch-action: none;
@@ -643,7 +653,7 @@ footer .link-button {
 .alert {
   font-size: 0.82rem;
   padding: 0.35rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border-left: 4px solid;
   background: var(--bg);
 }
@@ -657,7 +667,7 @@ footer .link-button {
 }
 .alert.info {
   border-color: var(--aesh);
-  background: #eef4fd;
+  background: var(--accent-soft);
 }
 .rules li {
   display: flex;
@@ -666,7 +676,7 @@ footer .link-button {
   align-items: center;
   font-size: 0.82rem;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.25rem 0.4rem;
 }
 .rules li button {
@@ -688,7 +698,7 @@ footer .link-button {
 }
 .hypotheses button.active {
   border-color: var(--accent);
-  background: #f0f5ff;
+  background: var(--accent-soft);
 }
 .status {
   font-size: 0.7rem;
@@ -858,7 +868,7 @@ footer .link-button {
 }
 .modal {
   background: var(--card);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 1.25rem;
   width: min(520px, 92vw);
   max-height: 90vh;
@@ -904,13 +914,13 @@ footer .link-button {
   gap: 0.1rem 0.6rem;
   align-items: baseline;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.5rem 0.7rem;
   cursor: pointer;
 }
 .choices label.active {
   border-color: var(--accent);
-  background: #f0f5ff;
+  background: var(--accent-soft);
 }
 .choices input {
   align-self: center;
@@ -925,7 +935,7 @@ footer .link-button {
 .preview {
   margin: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.4rem;
   background: var(--bg);
 }
@@ -946,7 +956,7 @@ footer .link-button {
 .guide {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius);
   padding: 1.5rem 2rem 2.5rem;
   line-height: 1.6;
 }
@@ -976,7 +986,7 @@ footer .link-button {
   max-width: 100%;
   height: auto;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   margin: 0.4rem 0;
 }
@@ -1005,7 +1015,7 @@ footer .link-button {
 .guide pre {
   background: #1f2933;
   color: #e8edf3;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 0.8rem 1rem;
   overflow: auto;
 }
@@ -1135,7 +1145,7 @@ footer .link-button {
   padding: 0.15rem 0.5rem;
 }
 .filters button.active {
-  background: #e8eefb;
+  background: var(--accent-soft);
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 600;
@@ -1254,7 +1264,7 @@ footer .link-button {
   gap: 0.4rem;
   padding: 0.6rem;
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--card);
 }
 .student-details header {
@@ -1267,4 +1277,140 @@ footer .link-button {
 }
 .student-details .row {
   flex-wrap: wrap;
+}
+
+/* ---- Compact student tiles (Classes): a summary, with the editing controls one click away ---- */
+.student-grid {
+  align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.mini-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--bg);
+}
+.mini-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.card-summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.card-summary strong {
+  overflow-wrap: anywhere;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  padding: 0 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+}
+.tag-gold {
+  background: #fff6dc;
+  border-color: #f0b429;
+  color: #7a5a00;
+}
+.tag-silver {
+  background: #eef1f4;
+  border-color: #8a96a3;
+  color: #3f4954;
+}
+.tag-aesh {
+  background: #f4f8ff;
+  border-color: #7aa7e8;
+  color: #2a5aa8;
+}
+.tag-note {
+  background: #efe7fb;
+  border-color: #cdb9ef;
+  color: #5b3a99;
+}
+.card-head > button {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  flex-shrink: 0;
+}
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.6rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid var(--line);
+}
+.test-tools {
+  margin: 0.5rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.test-tools summary {
+  cursor: pointer;
+}
+.test-tools .row {
+  margin-top: 0.4rem;
+}
+.card {
+  box-shadow: var(--shadow);
+}
+/* An open tile takes the whole row, so that its controls do not leave a hole under its neighbours. */
+.card.open {
+  grid-column: 1 / -1;
+}
+.card.open .card-body {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.card.open .card-body .photo {
+  width: 72px;
+  height: 72px;
+}
+.card.open .card-body input:not([type='checkbox']):not([hidden]) {
+  width: 170px;
+}
+.card.open .card-body .supports {
+  flex-basis: 100%;
+}
+
+/* ---- Icons: lined up with the text of the button they belong to ---- */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+button > svg.lucide {
+  flex-shrink: 0;
+}
+.tag-silver svg {
+  color: #8a96a3;
+}
+.tag-gold svg {
+  color: #c98f00;
 }

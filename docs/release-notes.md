@@ -3,6 +3,15 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.7.0 — 2026-10-26
+
+- **Nouvelle apparence « Papier »** : fond crème, vert profond, titres à empattements. Les couleurs du feu tricolore
+  restent les seules couleurs vives.
+- **Vraies icônes** : les petits dessins des boutons (exporter, imprimer, couronne…) remplacent les émojis, qui ne
+  s'affichaient pas de la même façon selon l'ordinateur.
+- **Classe d'un coup d'œil** : chaque élève est une petite fiche (photo, nom, pastilles). Le bouton « Modifier » ouvre
+  la fiche complète. Les outils de test (feux et photos fictifs) sont rangés à part.
+
 ## 0.6.0 — 2026-10-26
 
 - **Passer d'une classe à l'autre** : la liste des classes est à gauche, et un champ de recherche filtre les élèves par

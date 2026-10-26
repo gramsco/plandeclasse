@@ -103,7 +103,7 @@ function BackupStatus({ isEmpty, now }: { isEmpty: boolean; now: number }) {
   if (!lastExport)
     return (
       <span className={isEmpty ? '' : 'backup-warning'}>
-        {isEmpty ? 'aucune sauvegarde' : 'jamais exporté : pensez à ⬇ Exporter'}
+        {isEmpty ? 'aucune sauvegarde' : 'jamais exporté : pensez à exporter'}
       </span>
     )
   const days = Math.floor((now - new Date(lastExport).getTime()) / 86_400_000)

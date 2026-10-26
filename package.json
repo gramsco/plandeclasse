@@ -1,7 +1,7 @@
 {
   "name": "plandeclasse",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port 5173 --strictPort",
@@ -19,6 +19,7 @@
     "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
+    "lucide-react": "^1.61.0",
     "marked": "^18.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

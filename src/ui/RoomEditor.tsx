@@ -4,6 +4,7 @@ import { FURNITURE_TYPES } from '../model/rooms'
 import type { Furniture, FurnitureType, Room } from '../model/types'
 import { useApp } from '../store'
 import { toSvgPoint } from './geo'
+import { ICON, RotateCw } from './icons'
 import { RoomSvg } from './RoomSvg'
 
 type DragState = {
@@ -171,7 +172,7 @@ export function RoomEditor({ room }: { room: Room }) {
         {selected.length > 0 ? (
           <div className="column">
             <button onClick={() => rotateFurniture(room.id, selected)}>
-              ↻ Pivoter <kbd>R</kbd>
+              <RotateCw size={ICON} /> Pivoter <kbd>R</kbd>
             </button>
             <button onClick={() => setSelection(duplicateFurnitureItems(room.id, selected))}>Dupliquer</button>
             <button

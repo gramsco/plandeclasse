@@ -81,7 +81,7 @@ Vous arrivez sur le plan, prêt à remplir.
 
 ![Le plan avant placement : les élèves sont à gauche, à placer](img/03-plan-a-placer.png)
 
-Pour placer : **glissez chaque élève de la liste « À placer » sur une place**. Vous pouvez aussi cliquer sur « 🎲 Placer au hasard les restants ».
+Pour placer : **glissez chaque élève de la liste « À placer » sur une place**. Vous pouvez aussi cliquer sur « Placer au hasard les restants ».
 
 ![Plan rempli](img/04-plan-place.png)
 
@@ -95,23 +95,25 @@ Onglet **Classes (élèves)**. La liste de vos classes est à gauche : un clic p
 
 ![Fiches des élèves](img/05-classes.png)
 
-Pour chaque élève, vous pouvez :
+Chaque élève est d'abord une **petite fiche** : sa photo, son nom et des pastilles (genre, délégué, suppléant, feu tricolore, annotations), pour voir toute la classe d'un coup d'œil. Le bouton **Modifier** ouvre la fiche complète ; **Replier** la referme.
+
+Dans la fiche complète, vous pouvez :
 
 - **Photo** : cliquez sur le rond ou glissez-y une image depuis votre ordinateur. La photo est recadrée en carré et réduite (≈ 200 px) : elle reste légère. Sans photo, un avatar neutre s'affiche ; **Avatar au hasard** dessine un personnage à la place.
 - **Prénom et nom**.
 - **Genre** : Fille ou Garçon (facultatif ; recliquez pour retirer).
-- **Délégué** : le bouton 👑 ajoute une couronne dorée à l'élève sur le plan.
+- **Délégué** : le bouton « Délégué » (couronne) ajoute une couronne dorée à l'élève sur le plan.
 - **Suppléant** : le bouton « Suppléant » ajoute une couronne argentée. Un élève ne peut pas être à la fois délégué et suppléant : choisir l'un retire l'autre.
 - **Feu tricolore** : 🟢 sympa, 🟠 à surveiller, 🔴 perturbateur.
 - **Annotations** : PAP, PPS, PAI, PPRE, DYS, HPI, UPE2A, TDAH, ou un libellé de votre choix (« Autre… »).
 
 Pour ajouter beaucoup d'élèves d'un coup, utilisez **Coller une liste** : une ligne par élève, au format « Prénom Nom » ou « Nom, Prénom ».
 
-Les boutons **Photos fictives** et **Feux aléatoires** servent uniquement à faire des essais ; le second remplace les feux de toute la classe (1-2 rouges, 5-6 oranges, le reste vert).
+Les boutons **Photos fictives** et **Feux aléatoires**, rangés sous **Outils de test**, servent uniquement à faire des essais ; le second remplace les feux de toute la classe (1-2 rouges, 5-6 oranges, le reste vert).
 
 ### Les AESH
 
-**Ajouter un AESH** crée une personne qui n'est pas un élève. Choisissez les élèves qu'elle accompagne :
+**Ajouter un AESH** crée une personne qui n'est pas un élève. Ouvrez sa fiche avec **Modifier** et choisissez les élèves qu'elle accompagne :
 
 ![Fiche d'un AESH](img/06-aesh.png)
 
@@ -222,8 +224,8 @@ Cliquez sur **Imprimer / PDF** dans cette fenêtre. Dans la fenêtre d'impressio
 
 ![Boutons Exporter et Importer](img/12-entete.png)
 
-- **⬇ Exporter** crée un fichier `.classe` contenant tout : classes, photos, salles, plans, règles, notes.
-- **⬆ Importer** relit un fichier `.classe`. Vous choisissez :
+- **Exporter** crée un fichier `.classe` contenant tout : classes, photos, salles, plans, règles, notes.
+- **Importer** relit un fichier `.classe`. Vous choisissez :
   - **Ajouter** : vos données sont conservées ; ce qui existe déjà dans le fichier est mis à jour ;
   - **Tout remplacer** : efface d'abord ce qui est dans l'application.
 
@@ -291,7 +293,7 @@ Des photos et des noms d'élèves mineurs sont des données personnelles. Garder
 Vous êtes probablement sur une autre adresse ou un autre navigateur (Chrome ≠ Firefox, application installée ≠ onglet d'un autre site), ou en navigation privée. Retournez là où vous travailliez, ou importez votre dernier fichier `.classe`.
 
 **Comment passer sur un nouvel ordinateur ?**
-Exportez sur l'ancien (⬇ Exporter), copiez le fichier `.classe` (clé USB), importez sur le nouveau (⬆ Importer), puis supprimez le fichier de la clé.
+Exportez sur l'ancien (Exporter), copiez le fichier `.classe` (clé USB), importez sur le nouveau (Importer), puis supprimez le fichier de la clé.
 
 **Un message dit que mes données viennent d'une version plus récente.**
 Un ancien exemplaire de l'application est resté en cache. Cliquez sur « Recharger » ; si le message persiste, fermez tous les onglets de l'application et rouvrez-la. Vos données ne sont pas modifiées.

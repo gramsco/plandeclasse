@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { buildFile, download, readFile, type ExportFile } from '../io/file'
 import { storage, useApp } from '../store'
+import { Download, ICON, Upload } from './icons'
 import { Modal } from './Modal'
 
 const LAST_EXPORT_KEY = 'lastExport'
@@ -51,9 +52,11 @@ export function FileMenu({ onExported }: { onExported(): void }) {
   return (
     <div className="file-menu">
       <button onClick={() => void exportAll()} title="Enregistre tout dans un fichier .classe">
-        ⬇ Exporter
+        <Download size={ICON} /> Exporter
       </button>
-      <button onClick={() => input.current?.click()}>⬆ Importer</button>
+      <button onClick={() => input.current?.click()}>
+        <Upload size={ICON} /> Importer
+      </button>
       <input
         ref={input}
         type="file"

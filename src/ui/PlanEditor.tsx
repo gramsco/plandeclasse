@@ -25,6 +25,7 @@ import {
   savePrintOptions,
   type PrintOptions,
 } from './printOptions'
+import { Crown, Dices, ICON, PanelLeftClose, PanelLeftOpen, Printer, TriangleAlert, X } from './icons'
 import { Modal } from './Modal'
 import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
 import { RoomSvg } from './RoomSvg'
@@ -153,7 +154,13 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
           title={collapsed ? 'Afficher le menu' : 'Masquer le menu'}
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? '▶' : '◀ Masquer le menu'}
+          {collapsed ? (
+            <PanelLeftOpen size={ICON} />
+          ) : (
+            <>
+              <PanelLeftClose size={ICON} /> Masquer le menu
+            </>
+          )}
         </button>
         {!collapsed && (
           <>
@@ -171,7 +178,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
 
             {problemCount > 0 && tab !== 'rules' && (
               <button className="alert-banner" onClick={() => setTab('rules')}>
-                ⚠ {problemCount} alerte{problemCount > 1 ? 's' : ''} — voir
+                <TriangleAlert size={ICON} /> {problemCount} alerte{problemCount > 1 ? 's' : ''} — voir
               </button>
             )}
 
@@ -190,7 +197,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                   <h3>
                     À placer <small>{unplaced.length}</small>
                   </h3>
-                  {unplaced.length === 0 && <p className="hint">Tout le monde est placé 🎉</p>}
+                  {unplaced.length === 0 && <p className="hint">Tout le monde est placé</p>}
                   <ul>
                     {unplaced.map((s) => (
                       <li
@@ -218,7 +225,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                   ))}
                 </select>
                 <button onClick={() => fillPlan(plan.id, strategy)} disabled={unplaced.length === 0}>
-                  🎲 Placer au hasard les restants
+                  <Dices size={ICON} /> Placer au hasard les restants
                 </button>
                 <button onClick={() => confirm('Retirer tout le monde de sa place ?') && clearPlan(plan.id)}>
                   Tout vider
@@ -251,7 +258,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                   </>
                 )}
                 <button className="primary" onClick={() => setPrintOpen(true)}>
-                  🖨 Imprimer / PDF…
+                  <Printer size={ICON} /> Imprimer / PDF…
                 </button>
                 <p className="hint">
                   Glissez les personnes sur les places. Déposer sur une place occupée échange les deux.
@@ -277,7 +284,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
               className={filter === key ? 'active' : ''}
               onClick={() => setFilter(filter === key ? undefined : key)}
             >
-              {STUDENT_FILTER_LABELS[key]}
+              {key === 'delegate' && <Crown size={ICON} />} {STUDENT_FILTER_LABELS[key]}
             </button>
           ))}
         </div>
@@ -516,7 +523,7 @@ function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: Studen
         <Avatar student={student} url={photoUrl} />
         <strong>{fullName(student)}</strong>
         <button aria-label="Fermer les détails" onClick={onClose}>
-          ✕
+          <X size={ICON} />
         </button>
       </header>
       <p className="hint">
@@ -537,7 +544,7 @@ function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: Studen
               className={`delegate-toggle ${student.delegate ? 'active' : ''}`}
               onClick={() => setDelegate(student.id, !student.delegate)}
             >
-              👑 Délégué
+              <Crown size={ICON} /> Délégué
             </button>
             <button
               role="switch"
@@ -672,7 +679,7 @@ function PrintDialog({
             setTimeout(() => window.print(), 50)
           }}
         >
-          🖨 Imprimer / PDF
+          <Printer size={ICON} /> Imprimer / PDF
         </button>
       </div>
     </Modal>

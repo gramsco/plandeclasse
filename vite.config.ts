@@ -24,8 +24,8 @@ export default defineConfig({
         scope: './',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#f6f7f9',
-        theme_color: '#3b6fd4',
+        background_color: '#f7f2e8',
+        theme_color: '#2c6e5b',
         categories: ['education', 'productivity'],
         // Double-clicking a .classe file opens it in the installed app (Chromium), in the open window if any.
         file_handlers: [{ action: './', accept: { 'application/json': ['.classe'] } }],

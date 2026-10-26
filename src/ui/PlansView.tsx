@@ -51,7 +51,7 @@ export function PlansView() {
           <PlanEditor key={plan.id} plan={plan} schoolClass={schoolClass} room={room} />
         ) : (
           <div className="welcome">
-            <h2>Bienvenue 👋</h2>
+            <h2>Bienvenue</h2>
             <p>
               Un <b>plan</b> place une <b>classe</b> (vos élèves) dans une <b>salle</b> (le lieu).
             </p>

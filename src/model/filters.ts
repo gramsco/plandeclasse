@@ -6,7 +6,7 @@ export type StudentFilter = 'delegate' | 'deputy' | 'aesh' | 'girl' | 'boy' | Tr
 export const STUDENT_FILTERS: StudentFilter[] = ['delegate', 'deputy', 'aesh', 'girl', 'boy', 'red', 'orange', 'green']
 
 export const STUDENT_FILTER_LABELS: Record<StudentFilter, string> = {
-  delegate: '👑 Délégués',
+  delegate: 'Délégués',
   deputy: 'Suppléants',
   aesh: 'AESH',
   girl: 'Filles',

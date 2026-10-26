@@ -87,6 +87,10 @@ try {
   await page.getByRole('button', { name: 'Classes (élèves)' }).click()
   await page.getByPlaceholder('Prénom').first().fill('Sam')
   await page.getByRole('button', { name: 'Ajouter un AESH' }).click()
+  await page
+    .locator('.card-aesh')
+    .getByRole('button', { name: /^Modifier/ })
+    .click()
   await page.locator('.card-aesh summary').click()
   await page.locator('.card-aesh .checklist input').first().check()
   await pause()

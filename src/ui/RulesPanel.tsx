@@ -14,6 +14,7 @@ import {
 } from '../model/types'
 import { matchesSearch } from '../model/search'
 import { useApp } from '../store'
+import { Check, ICON, X } from './icons'
 
 function describeRule(rule: Rule, byId: Map<string, Student>) {
   const name = (id: string) => (byId.get(id) ? fullName(byId.get(id)!) : '?')
@@ -88,7 +89,11 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
       <h3>
         Alertes <small>{alerts.length}</small>
       </h3>
-      {alerts.length === 0 && <p className="hint">Aucune alerte ✔</p>}
+      {alerts.length === 0 && (
+        <p className="hint">
+          <Check size={ICON} /> Aucune alerte
+        </p>
+      )}
       <ul className="alerts">
         {alerts.map((alert) => (
           <li
@@ -124,7 +129,7 @@ export function RulesPanel({ plan, schoolClass, alerts, onHighlight }: Props) {
                 deleteRule(plan.id, rule.id)
               }}
             >
-              ✕
+              <X size={ICON} />
             </button>
           </li>
         ))}

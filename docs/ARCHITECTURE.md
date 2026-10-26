@@ -21,7 +21,7 @@ src/
   storage/   Storage interface + IndexedDB and in-memory implementations, photo resizing, fake avatars
   store/     Zustand store: state, actions, debounced persistence, import
   io/        .classe file: build, read (validate + migrate), download
-  ui/        React components, stylesheet, built-in guide renderer
+  ui/        React components, stylesheet (design tokens in `:root`), built-in guide renderer; icons come from `lucide-react`, re-exported by `ui/icons.tsx`
 scripts/     icons, screenshots, language check, Claude Code / git hooks
 docs/        user guide (French) and its screenshots, this file
 ```
