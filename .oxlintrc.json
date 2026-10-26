@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "react/exhaustive-deps": "error",
+    "react/rules-of-hooks": "error",
+    "eqeqeq": "error",
+    "no-console": "warn",
+    "react/react-in-jsx-scope": "off",
+    "no-underscore-dangle": "off"
+  },
+  "ignorePatterns": ["dist", "node_modules"],
+  "overrides": [
+    {
+      "files": ["scripts/**"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}

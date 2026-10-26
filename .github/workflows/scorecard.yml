@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "41 4 * * 2"
+    - cron: '41 4 * * 2'
   workflow_dispatch:
 
 permissions: read-all
@@ -13,8 +13,8 @@ jobs:
   analyse:
     runs-on: ubuntu-latest
     permissions:
-      security-events: write # publier les résultats dans l'onglet « Security »
-      id-token: write # publier le score (public) sur scorecard.dev
+      security-events: write # publish the results in the Security tab
+      id-token: write # publish the (public) score on scorecard.dev
       contents: read
       actions: read
     steps:

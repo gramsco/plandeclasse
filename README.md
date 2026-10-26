@@ -11,14 +11,15 @@ Voir [SECURITY.md](SECURITY.md) : signalement d'une faille et contrôles automat
 
 ## Développement
 
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) (règles du projet, en anglais) et [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```bash
 npm install
-npm run dev          # http://localhost:5173
-npm test             # tests unitaires
-npm run build        # build de production (PWA) dans dist/
-npm run preview      # sert dist/ — nécessaire pour tester le service worker
-npm run icons        # régénère les icônes PWA
-npm run screenshots  # régénère les captures du guide (Google Chrome requis)
+npm run hooks:install   # hook git : lance `npm run check` avant chaque commit
+npm run dev             # http://localhost:5173
+npm run check           # typecheck, lint, langue du code, formatage, tests
+npm run build           # build de production (PWA) dans dist/
+npm run preview         # sert dist/ — nécessaire pour tester le service worker
 ```
 
-Voir `PLAN.md` pour l'architecture, le modèle de données et les règles de migration.
+Le code, les commentaires et les messages de commit sont en anglais ; l'interface et le guide sont en français.

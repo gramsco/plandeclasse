@@ -1,30 +1,31 @@
 import type { Storage } from './storage'
 
 function table<T extends { id: string }>() {
-  const m = new Map<string, T>()
+  const records = new Map<string, T>()
   return {
-    all: async () => structuredClone([...m.values()]),
-    put: async (x: T) => void m.set(x.id, structuredClone(x)),
-    del: async (id: string) => void m.delete(id),
+    all: async () => structuredClone([...records.values()]),
+    put: async (record: T) => void records.set(record.id, structuredClone(record)),
+    delete: async (id: string) => void records.delete(id),
   }
 }
 
+/** In-memory implementation, used by the tests. */
 export function memoryStorage(): Storage {
   const classes = table<Parameters<Storage['saveClass']>[0]>()
-  const salles = table<Parameters<Storage['saveSalle']>[0]>()
+  const rooms = table<Parameters<Storage['saveRoom']>[0]>()
   const plans = table<Parameters<Storage['savePlan']>[0]>()
   const photos = new Map<string, Blob>()
   const meta = new Map<string, unknown>()
   return {
     loadClasses: classes.all,
     saveClass: classes.put,
-    deleteClass: classes.del,
-    loadSalles: salles.all,
-    saveSalle: salles.put,
-    deleteSalle: salles.del,
+    deleteClass: classes.delete,
+    loadRooms: rooms.all,
+    saveRoom: rooms.put,
+    deleteRoom: rooms.delete,
     loadPlans: plans.all,
     savePlan: plans.put,
-    deletePlan: plans.del,
+    deletePlan: plans.delete,
     async putPhoto(id, blob) {
       photos.set(id, blob)
     },
@@ -37,11 +38,11 @@ export function memoryStorage(): Storage {
     async listPhotoIds() {
       return [...photos.keys()]
     },
-    async getMeta<T>(cle: string) {
-      return meta.get(cle) as T | undefined
+    async getMeta<T>(key: string) {
+      return meta.get(key) as T | undefined
     },
-    async setMeta(cle, valeur) {
-      meta.set(cle, structuredClone(valeur))
+    async setMeta(key, value) {
+      meta.set(key, structuredClone(value))
     },
   }
 }

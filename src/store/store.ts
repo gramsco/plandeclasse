@@ -1,97 +1,103 @@
 import { create } from 'zustand'
-import { base64VersBlob, type FichierClasse } from '../io/fichier'
-import { aimanter, emprise } from '../model/geometry'
-import { migrer, VERSION_DONNEES, type Donnees } from '../model/migrations'
-import { placer as placerAff, purgerAffectations, purgerRegles, remplirAleatoire } from '../model/plan'
-import { classeDemo, melangerFeux } from '../model/demo'
-import { creerMeuble, dupliquerMeuble, dupliquerSalle, modeleSalle } from '../model/salles'
+import { base64ToBlob, type ExportFile } from '../io/file'
+import { demoClass, shuffleLights } from '../model/demo'
+import { footprint, snap } from '../model/geometry'
+import { DATA_VERSION, migrate, toRawData } from '../model/migrations'
+import { assign, fillRandomly, purgeAssignments, purgeRules } from '../model/plan'
+import { createFurniture, duplicateFurniture, duplicateRoom, findRoomTemplate } from '../model/rooms'
 import {
   newAesh,
-  newClasse,
-  newEleve,
   newId,
-  normaliserClasse,
-  normaliserPlan,
-  normaliserSalle,
-  type Classe,
-  type Eleve,
-  type Feu,
-  type Genre,
+  newSchoolClass,
+  newStudent,
+  normalizeClass,
+  normalizePlan,
+  normalizeRoom,
+  type FurnitureType,
+  type Gender,
   type Plan,
-  type Regle,
-  type StatutPlan,
+  type PlanStatus,
   type Rotation,
-  type Salle,
-  type TypeMeuble,
+  type Room,
+  type Rule,
+  type SchoolClass,
+  type Student,
+  type TrafficLight,
 } from '../model/types'
 import type { Storage } from '../storage/storage'
 
-type SansId<T> = T extends { id: string } ? Omit<T, 'id'> : never
+type WithoutId<T> = T extends { id: string } ? Omit<T, 'id'> : never
 
-export type Vue = 'plans' | 'classes' | 'salles' | 'aide'
+export type View = 'plans' | 'classes' | 'rooms' | 'help'
+
+/** Meta keys. The `versionDonnees` key is the one older releases read: keep writing it so that they refuse newer data. */
+const META_DATA_VERSION = 'dataVersion'
+const META_LEGACY_DATA_VERSION = 'versionDonnees'
+const META_BACKUP = 'preMigrationBackup'
 
 type State = {
-  pret: boolean
-  erreurVersion?: string // données écrites par une version plus récente : on n'y touche pas
-  vue: Vue
-  classes: Classe[]
-  salles: Salle[]
+  ready: boolean
+  /** Set when the stored data was written by a newer release: we must not touch it. */
+  versionError?: string
+  view: View
+  classes: SchoolClass[]
+  rooms: Room[]
   plans: Plan[]
-  courante?: string
-  salleCourante?: string
-  planCourant?: string
+  currentClassId?: string
+  currentRoomId?: string
+  currentPlanId?: string
   photoUrls: Record<string, string>
 }
 
 type Actions = {
   init(): Promise<void>
-  setVue(v: Vue): void
+  setView(view: View): void
 
-  ajouterClasse(nom: string, nbEleves?: number): string
-  ajouterClasseDemo(): string
-  renommerClasse(id: string, nom: string): void
-  dupliquerClasse(id: string): Promise<void>
-  supprimerClasse(id: string): void
-  choisirClasse(id: string): void
-  ajouterEleves(eleves: Eleve[]): void
-  ajouterEleve(prenom: string, nom: string): void
-  ajouterAesh(prenom: string, nom: string): void
-  definirFeu(id: string, feu: Feu): void
-  definirGenre(id: string, genre: Genre | undefined): void
-  feuxAleatoires(): void
-  basculerAnnotation(id: string, label: string): void
-  definirAccompagnes(aeshId: string, eleveIds: string[]): void
-  modifierEleve(id: string, patch: Partial<Pick<Eleve, 'prenom' | 'nom'>>): void
-  supprimerEleve(id: string): void
-  definirPhoto(eleveId: string, blob: Blob): Promise<void>
-  retirerPhoto(eleveId: string): void
+  addClass(name: string, studentCount?: number): string
+  addDemoClass(): string
+  renameClass(id: string, name: string): void
+  duplicateClass(id: string): Promise<void>
+  deleteClass(id: string): void
+  selectClass(id: string): void
+  addStudents(students: Student[]): void
+  addStudent(firstName: string, lastName: string): void
+  addAesh(firstName: string, lastName: string): void
+  setLight(id: string, light: TrafficLight): void
+  setGender(id: string, gender: Gender | undefined): void
+  shuffleLights(): void
+  toggleAnnotation(id: string, label: string): void
+  setSupports(aeshId: string, studentIds: string[]): void
+  updateStudent(id: string, patch: Partial<Pick<Student, 'firstName' | 'lastName'>>): void
+  deleteStudent(id: string): void
+  setPhoto(studentId: string, blob: Blob): Promise<void>
+  removePhoto(studentId: string): void
 
-  ajouterSalle(modeleKey: string): string
-  renommerSalle(id: string, nom: string): void
-  dupliquerSalle(id: string): void
-  supprimerSalle(id: string): void
-  choisirSalle(id: string): void
-  redimensionnerSalle(id: string, largeur: number, hauteur: number): void
-  ajouterMeuble(salleId: string, type: TypeMeuble): string
-  deplacerMeubles(salleId: string, positions: { id: string; x: number; y: number }[]): void
-  pivoterMeubles(salleId: string, ids: string[]): void
-  dupliquerMeubles(salleId: string, ids: string[]): string[]
-  supprimerMeubles(salleId: string, ids: string[]): void
+  addRoom(templateKey: string): string
+  renameRoom(id: string, name: string): void
+  duplicateRoom(id: string): void
+  deleteRoom(id: string): void
+  selectRoom(id: string): void
+  resizeRoom(id: string, width: number, height: number): void
+  addFurniture(roomId: string, type: FurnitureType): string
+  moveFurniture(roomId: string, positions: { id: string; x: number; y: number }[]): void
+  rotateFurniture(roomId: string, ids: string[]): void
+  duplicateFurnitureItems(roomId: string, ids: string[]): string[]
+  deleteFurniture(roomId: string, ids: string[]): void
 
-  creerPlan(classeId: string, salleId: string): string
-  renommerPlan(id: string, nom: string): void
-  supprimerPlan(id: string): void
-  choisirPlan(id: string): void
-  placer(planId: string, eleveId: string, placeId: string | null): void
-  viderPlan(planId: string): void
-  remplirPlan(planId: string): void
-  ajouterRegle(planId: string, regle: SansId<Regle>): void
-  supprimerRegle(planId: string, regleId: string): void
-  dupliquerPlan(planId: string): string | undefined
-  definirStatut(planId: string, statut: StatutPlan): void
-  modifierNotes(planId: string, notes: string): void
+  createPlan(classId: string, roomId: string): string
+  renamePlan(id: string, name: string): void
+  deletePlan(id: string): void
+  selectPlan(id: string): void
+  assignSeat(planId: string, studentId: string, seatId: string | null): void
+  clearPlan(planId: string): void
+  fillPlan(planId: string): void
+  addRule(planId: string, rule: WithoutId<Rule>): void
+  deleteRule(planId: string, ruleId: string): void
+  duplicatePlan(planId: string): string | undefined
+  setStatus(planId: string, status: PlanStatus): void
+  setNotes(planId: string, notes: string): void
 
-  importer(fichier: FichierClasse, mode: 'fusion' | 'remplacer'): Promise<void>
+  importData(file: ExportFile, mode: 'merge' | 'replace'): Promise<void>
 }
 
 export type AppStore = State & Actions
@@ -100,7 +106,8 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
   return create<AppStore>((set, get) => {
-    const planifier = (kind: 'classes' | 'salles' | 'plans', id: string) => {
+    /** Saves a record shortly after its last change (debounced per record). */
+    const scheduleSave = (kind: 'classes' | 'rooms' | 'plans', id: string) => {
       const key = `${kind}:${id}`
       clearTimeout(timers.get(key))
       timers.set(
@@ -108,448 +115,489 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
         setTimeout(() => {
           timers.delete(key)
           if (kind === 'classes') {
-            const x = get().classes.find((c) => c.id === id)
-            if (x) void storage.saveClass(x)
-          } else if (kind === 'salles') {
-            const x = get().salles.find((c) => c.id === id)
-            if (x) void storage.saveSalle(x)
+            const record = get().classes.find((c) => c.id === id)
+            if (record) void storage.saveClass(record)
+          } else if (kind === 'rooms') {
+            const record = get().rooms.find((r) => r.id === id)
+            if (record) void storage.saveRoom(record)
           } else {
-            const x = get().plans.find((c) => c.id === id)
-            if (x) void storage.savePlan(x)
+            const record = get().plans.find((p) => p.id === id)
+            if (record) void storage.savePlan(record)
           }
         }, debounceMs),
       )
     }
-    const annuler = (kind: string, id: string) => clearTimeout(timers.get(`${kind}:${id}`))
+    const cancelSave = (kind: string, id: string) => clearTimeout(timers.get(`${kind}:${id}`))
 
-    /** Retire des plans les affectations devenues invalides (élève / table supprimés). */
-    const purger = () => {
-      const { plans, classes, salles } = get()
-      let change = false
-      const next = plans.map((p) => {
-        const classe = classes.find((c) => c.id === p.classeId)
-        const aff = purgerAffectations(p, classe, salles.find((s) => s.id === p.salleId))
-        const regles = purgerRegles(p.regles, classe)
-        if (Object.keys(aff).length === Object.keys(p.affectations).length && regles.length === p.regles.length) return p
-        change = true
-        planifier('plans', p.id)
-        return { ...p, affectations: aff, regles }
+    /** Drops from the plans what became invalid (deleted student or furniture). */
+    const purgePlans = () => {
+      const { plans, classes, rooms } = get()
+      let changed = false
+      const next = plans.map((plan) => {
+        const schoolClass = classes.find((c) => c.id === plan.classId)
+        const assignments = purgeAssignments(
+          plan,
+          schoolClass,
+          rooms.find((r) => r.id === plan.roomId),
+        )
+        const rules = purgeRules(plan.rules, schoolClass)
+        if (
+          Object.keys(assignments).length === Object.keys(plan.assignments).length &&
+          rules.length === plan.rules.length
+        )
+          return plan
+        changed = true
+        scheduleSave('plans', plan.id)
+        return { ...plan, assignments, rules }
       })
-      if (change) set({ plans: next })
+      if (changed) set({ plans: next })
     }
 
-    const majClasse = (id: string, fn: (c: Classe) => Classe) => {
+    const updateClass = (id: string, fn: (c: SchoolClass) => SchoolClass) => {
       set((s) => ({ classes: s.classes.map((c) => (c.id === id ? fn(c) : c)) }))
-      planifier('classes', id)
-      purger()
+      scheduleSave('classes', id)
+      purgePlans()
     }
-    const majSalle = (id: string, fn: (s: Salle) => Salle) => {
-      set((s) => ({ salles: s.salles.map((x) => (x.id === id ? fn(x) : x)) }))
-      planifier('salles', id)
-      purger()
+    const updateRoom = (id: string, fn: (r: Room) => Room) => {
+      set((s) => ({ rooms: s.rooms.map((r) => (r.id === id ? fn(r) : r)) }))
+      scheduleSave('rooms', id)
+      purgePlans()
     }
-    const majPlan = (id: string, fn: (p: Plan) => Plan) => {
-      set((s) => ({ plans: s.plans.map((x) => (x.id === id ? fn(x) : x)) }))
-      planifier('plans', id)
+    const updatePlan = (id: string, fn: (p: Plan) => Plan) => {
+      set((s) => ({ plans: s.plans.map((p) => (p.id === id ? fn(p) : p)) }))
+      scheduleSave('plans', id)
     }
-    const majCourante = (fn: (c: Classe) => Classe) => {
-      const { courante } = get()
-      if (courante) majClasse(courante, fn)
+    const updateCurrentClass = (fn: (c: SchoolClass) => SchoolClass) => {
+      const { currentClassId } = get()
+      if (currentClassId) updateClass(currentClassId, fn)
     }
 
-    const chargerUrl = async (photoId: string) => {
+    const loadPhotoUrl = async (photoId: string) => {
       if (get().photoUrls[photoId]) return
       const blob = await storage.getPhoto(photoId)
       if (blob) set((s) => ({ photoUrls: { ...s.photoUrls, [photoId]: URL.createObjectURL(blob) } }))
     }
 
-    const supprimerPhotos = (ids: (string | undefined)[]) => {
+    const deletePhotos = (ids: (string | undefined)[]) => {
       for (const id of ids) {
         if (!id) continue
         void storage.deletePhoto(id)
         const url = get().photoUrls[id]
         if (url) URL.revokeObjectURL(url)
         set((s) => {
-          const { [id]: _, ...reste } = s.photoUrls
-          return { photoUrls: reste }
+          const { [id]: _removed, ...rest } = s.photoUrls
+          return { photoUrls: rest }
         })
       }
     }
 
-    const retirerPlans = (filtre: (p: Plan) => boolean) => {
-      for (const p of get().plans.filter(filtre)) {
-        annuler('plans', p.id)
-        void storage.deletePlan(p.id)
+    const removePlans = (predicate: (p: Plan) => boolean) => {
+      for (const plan of get().plans.filter(predicate)) {
+        cancelSave('plans', plan.id)
+        void storage.deletePlan(plan.id)
       }
       set((s) => {
-        const plans = s.plans.filter((p) => !filtre(p))
-        return { plans, planCourant: plans.some((p) => p.id === s.planCourant) ? s.planCourant : plans[0]?.id }
+        const plans = s.plans.filter((p) => !predicate(p))
+        return { plans, currentPlanId: plans.some((p) => p.id === s.currentPlanId) ? s.currentPlanId : plans[0]?.id }
       })
     }
 
-    const eleveParId = (id: string) => get().classes.flatMap((c) => c.eleves).find((e) => e.id === id)
-    const salleParId = (id: string) => get().salles.find((s) => s.id === id)
+    const studentById = (id: string) =>
+      get()
+        .classes.flatMap((c) => c.students)
+        .find((s) => s.id === id)
+    const roomById = (id: string) => get().rooms.find((r) => r.id === id)
+
+    const newerVersionMessage = (found: number | string) =>
+      `Vos données ont été enregistrées par une version plus récente de l'application (format ${found}, celle-ci comprend jusqu'au format ${DATA_VERSION}). Rechargez la page pour obtenir la dernière version. Vos données n'ont pas été modifiées.`
 
     return {
-      pret: false,
-      vue: 'plans',
+      ready: false,
+      view: 'plans',
       classes: [],
-      salles: [],
+      rooms: [],
       plans: [],
       photoUrls: {},
 
       async init() {
-        const brut = {
-          classes: await storage.loadClasses(),
-          salles: await storage.loadSalles(),
-          plans: await storage.loadPlans(),
-        }
-        const vide = !brut.classes.length && !brut.salles.length && !brut.plans.length
-        // Sans marqueur de version : base vide = à jour ; base remplie = données d'avant le versionnage (v1).
-        const stockee = (await storage.getMeta<number>('versionDonnees')) ?? (vide ? VERSION_DONNEES : 1)
-        if (stockee > VERSION_DONNEES) {
+        try {
+          const stored = {
+            classes: await storage.loadClasses(),
+            rooms: await storage.loadRooms(),
+            plans: await storage.loadPlans(),
+          }
+          const isEmpty = !stored.classes.length && !stored.rooms.length && !stored.plans.length
+          // No version marker: an empty database is up to date; a filled one predates versioning (v1).
+          const storedVersion =
+            (await storage.getMeta<number>(META_DATA_VERSION)) ??
+            (await storage.getMeta<number>(META_LEGACY_DATA_VERSION)) ??
+            (isEmpty ? DATA_VERSION : 1)
+          if (storedVersion > DATA_VERSION) {
+            set({ ready: true, versionError: newerVersionMessage(storedVersion) })
+            return
+          }
+          let data: { classes: unknown[]; rooms: unknown[]; plans: unknown[] } = stored
+          if (storedVersion < DATA_VERSION) {
+            // Safety net: keep a copy of the original data before any migration.
+            await storage.setMeta(META_BACKUP, {
+              version: storedVersion,
+              date: new Date().toISOString(),
+              data: stored,
+            })
+            data = migrate(toRawData(storedVersion, stored), storedVersion)
+            await Promise.all([
+              ...data.classes.map((c) => storage.saveClass(normalizeClass(c))),
+              ...data.rooms.map((r) => storage.saveRoom(normalizeRoom(r))),
+              ...data.plans.map((p) => storage.savePlan(normalizePlan(p))),
+            ])
+          }
+          await storage.setMeta(META_DATA_VERSION, DATA_VERSION)
+          await storage.setMeta(META_LEGACY_DATA_VERSION, DATA_VERSION)
+          const classes = data.classes.map(normalizeClass)
+          const rooms = data.rooms.map(normalizeRoom)
+          const plans = data.plans.map(normalizePlan)
           set({
-            pret: true,
-            erreurVersion: `Vos données ont été enregistrées par une version plus récente de l'application (format ${stockee}, celle-ci comprend jusqu'au format ${VERSION_DONNEES}). Rechargez la page pour obtenir la dernière version. Vos données n'ont pas été modifiées.`,
+            classes,
+            rooms,
+            plans,
+            currentClassId: classes[0]?.id,
+            currentRoomId: rooms[0]?.id,
+            currentPlanId: plans[0]?.id,
+            ready: true,
           })
-          return
+          const used = new Set(classes.flatMap((c) => c.students.map((s) => s.photoId)))
+          for (const id of await storage.listPhotoIds()) if (!used.has(id)) void storage.deletePhoto(id)
+          for (const id of used) if (id) void loadPhotoUrl(id)
+        } catch (error) {
+          // Opening a database whose version is higher than ours fails with a VersionError.
+          if ((error as Error)?.name === 'VersionError')
+            set({ ready: true, versionError: newerVersionMessage('inconnu') })
+          else throw error
         }
-        let donnees: Donnees = brut
-        if (stockee < VERSION_DONNEES) {
-          // Filet de sécurité : copie des données d'origine avant toute migration.
-          await storage.setMeta('sauvegardeAvantMigration', {
-            version: stockee,
-            date: new Date().toISOString(),
-            donnees: brut,
-          })
-          donnees = migrer(brut, stockee)
-          await Promise.all([
-            ...donnees.classes.map((c) => storage.saveClass(normaliserClasse(c))),
-            ...donnees.salles.map((x) => storage.saveSalle(normaliserSalle(x))),
-            ...donnees.plans.map((p) => storage.savePlan(normaliserPlan(p))),
-          ])
-        }
-        await storage.setMeta('versionDonnees', VERSION_DONNEES)
-        const classes = donnees.classes.map(normaliserClasse)
-        const salles = donnees.salles.map(normaliserSalle)
-        const plans = donnees.plans.map(normaliserPlan)
-        set({
-          classes,
-          salles,
-          plans,
-          courante: classes[0]?.id,
-          salleCourante: salles[0]?.id,
-          planCourant: plans[0]?.id,
-          pret: true,
-        })
-        const ids = new Set(classes.flatMap((c) => c.eleves.map((e) => e.photoId)))
-        for (const id of await storage.listPhotoIds()) if (!ids.has(id)) void storage.deletePhoto(id)
-        for (const id of ids) if (id) void chargerUrl(id)
       },
 
-      setVue: (vue) => set({ vue }),
+      setView: (view) => set({ view }),
 
       // ---- Classes ----
-      ajouterClasse(nom, nbEleves = 0) {
-        const c = newClasse(nom, nbEleves)
-        set((s) => ({ classes: [...s.classes, c], courante: c.id }))
-        planifier('classes', c.id)
-        return c.id
+      addClass(name, studentCount = 0) {
+        const schoolClass = newSchoolClass(name, studentCount)
+        set((s) => ({ classes: [...s.classes, schoolClass], currentClassId: schoolClass.id }))
+        scheduleSave('classes', schoolClass.id)
+        return schoolClass.id
       },
-      ajouterClasseDemo() {
-        const c = classeDemo()
-        set((s) => ({ classes: [...s.classes, c], courante: c.id }))
-        planifier('classes', c.id)
-        return c.id
+      addDemoClass() {
+        const schoolClass = demoClass()
+        set((s) => ({ classes: [...s.classes, schoolClass], currentClassId: schoolClass.id }))
+        scheduleSave('classes', schoolClass.id)
+        return schoolClass.id
       },
-      renommerClasse: (id, nom) => majClasse(id, (c) => ({ ...c, nom })),
-      choisirClasse: (id) => set({ courante: id }),
+      renameClass: (id, name) => updateClass(id, (c) => ({ ...c, name })),
+      selectClass: (id) => set({ currentClassId: id }),
 
-      async dupliquerClasse(id) {
-        const src = get().classes.find((c) => c.id === id)
-        if (!src) return
+      async duplicateClass(id) {
+        const source = get().classes.find((c) => c.id === id)
+        if (!source) return
         const idMap = new Map<string, string>()
-        const eleves: Eleve[] = []
-        for (const e of src.eleves) {
+        const students: Student[] = []
+        for (const student of source.students) {
           let photoId: string | undefined
-          if (e.photoId) {
-            const blob = await storage.getPhoto(e.photoId)
+          if (student.photoId) {
+            const blob = await storage.getPhoto(student.photoId)
             if (blob) {
               photoId = newId()
               await storage.putPhoto(photoId, blob)
-              void chargerUrl(photoId)
+              void loadPhotoUrl(photoId)
             }
           }
-          const nid = newId()
-          idMap.set(e.id, nid)
-          eleves.push({ ...e, id: nid, photoId })
+          const newStudentId = newId()
+          idMap.set(student.id, newStudentId)
+          students.push({ ...student, id: newStudentId, photoId })
         }
-        const copie: Classe = {
-          ...structuredClone(src),
+        const copy: SchoolClass = {
+          ...structuredClone(source),
           id: newId(),
-          nom: `${src.nom} (copie)`,
-          eleves: eleves.map((e) => ({ ...e, accompagne: e.accompagne.map((id) => idMap.get(id) ?? id) })),
+          name: `${source.name} (copie)`,
+          students: students.map((s) => ({ ...s, supports: s.supports.map((sid) => idMap.get(sid) ?? sid) })),
         }
-        set((s) => ({ classes: [...s.classes, copie], courante: copie.id }))
-        planifier('classes', copie.id)
+        set((s) => ({ classes: [...s.classes, copy], currentClassId: copy.id }))
+        scheduleSave('classes', copy.id)
       },
 
-      supprimerClasse(id) {
-        const c = get().classes.find((x) => x.id === id)
-        if (!c) return
-        annuler('classes', id)
-        supprimerPhotos(c.eleves.map((e) => e.photoId))
+      deleteClass(id) {
+        const schoolClass = get().classes.find((c) => c.id === id)
+        if (!schoolClass) return
+        cancelSave('classes', id)
+        deletePhotos(schoolClass.students.map((s) => s.photoId))
         void storage.deleteClass(id)
-        retirerPlans((p) => p.classeId === id)
+        removePlans((p) => p.classId === id)
         set((s) => {
-          const classes = s.classes.filter((x) => x.id !== id)
-          return { classes, courante: s.courante === id ? classes[0]?.id : s.courante }
+          const classes = s.classes.filter((c) => c.id !== id)
+          return { classes, currentClassId: s.currentClassId === id ? classes[0]?.id : s.currentClassId }
         })
       },
 
-      ajouterEleves: (eleves) => majCourante((c) => ({ ...c, eleves: [...c.eleves, ...eleves] })),
-      ajouterEleve: (prenom, nom) => get().ajouterEleves([newEleve(prenom, nom)]),
-      ajouterAesh: (prenom, nom) => get().ajouterEleves([newAesh(prenom, nom)]),
-      definirFeu: (id, feu) =>
-        majCourante((c) => ({ ...c, eleves: c.eleves.map((e) => (e.id === id ? { ...e, feu } : e)) })),
-      basculerAnnotation: (id, label) => {
-        const l = label.trim()
-        if (!l) return
-        majCourante((c) => ({
+      addStudents: (students) => updateCurrentClass((c) => ({ ...c, students: [...c.students, ...students] })),
+      addStudent: (firstName, lastName) => get().addStudents([newStudent(firstName, lastName)]),
+      addAesh: (firstName, lastName) => get().addStudents([newAesh(firstName, lastName)]),
+      setLight: (id, light) =>
+        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, light } : s)) })),
+      toggleAnnotation: (id, label) => {
+        const trimmed = label.trim()
+        if (!trimmed) return
+        updateCurrentClass((c) => ({
           ...c,
-          eleves: c.eleves.map((e) =>
-            e.id !== id ? e : { ...e, annotations: e.annotations.includes(l) ? e.annotations.filter((a) => a !== l) : [...e.annotations, l] },
+          students: c.students.map((s) =>
+            s.id !== id
+              ? s
+              : {
+                  ...s,
+                  annotations: s.annotations.includes(trimmed)
+                    ? s.annotations.filter((a) => a !== trimmed)
+                    : [...s.annotations, trimmed],
+                },
           ),
         }))
       },
-      feuxAleatoires: () => majCourante((c) => ({ ...c, eleves: melangerFeux(c.eleves) })),
-      definirGenre: (id, genre) =>
-        majCourante((c) => ({ ...c, eleves: c.eleves.map((e) => (e.id === id ? { ...e, genre } : e)) })),
-      definirAccompagnes: (aeshId, eleveIds) =>
-        majCourante((c) => ({
+      shuffleLights: () => updateCurrentClass((c) => ({ ...c, students: shuffleLights(c.students) })),
+      setGender: (id, gender) =>
+        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, gender } : s)) })),
+      setSupports: (aeshId, studentIds) =>
+        updateCurrentClass((c) => ({
           ...c,
-          eleves: c.eleves.map((e) => (e.id === aeshId ? { ...e, accompagne: eleveIds } : e)),
+          students: c.students.map((s) => (s.id === aeshId ? { ...s, supports: studentIds } : s)),
         })),
-      modifierEleve: (id, patch) =>
-        majCourante((c) => ({ ...c, eleves: c.eleves.map((e) => (e.id === id ? { ...e, ...patch } : e)) })),
+      updateStudent: (id, patch) =>
+        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
 
-      supprimerEleve(id) {
-        supprimerPhotos([eleveParId(id)?.photoId])
-        majCourante((c) => ({
+      deleteStudent(id) {
+        deletePhotos([studentById(id)?.photoId])
+        updateCurrentClass((c) => ({
           ...c,
-          eleves: c.eleves
-            .filter((x) => x.id !== id)
-            .map((x) => (x.accompagne.includes(id) ? { ...x, accompagne: x.accompagne.filter((i) => i !== id) } : x)),
+          students: c.students
+            .filter((s) => s.id !== id)
+            .map((s) => (s.supports.includes(id) ? { ...s, supports: s.supports.filter((sid) => sid !== id) } : s)),
         }))
       },
 
-      async definirPhoto(eleveId, blob) {
-        const ancien = eleveParId(eleveId)?.photoId
+      async setPhoto(studentId, blob) {
+        const previous = studentById(studentId)?.photoId
         const photoId = newId()
         await storage.putPhoto(photoId, blob)
         set((s) => ({ photoUrls: { ...s.photoUrls, [photoId]: URL.createObjectURL(blob) } }))
-        supprimerPhotos([ancien])
-        majCourante((c) => ({
+        deletePhotos([previous])
+        updateCurrentClass((c) => ({
           ...c,
-          eleves: c.eleves.map((e) => (e.id === eleveId ? { ...e, photoId } : e)),
+          students: c.students.map((s) => (s.id === studentId ? { ...s, photoId } : s)),
         }))
       },
 
-      retirerPhoto(eleveId) {
-        supprimerPhotos([eleveParId(eleveId)?.photoId])
-        majCourante((c) => ({
+      removePhoto(studentId) {
+        deletePhotos([studentById(studentId)?.photoId])
+        updateCurrentClass((c) => ({
           ...c,
-          eleves: c.eleves.map((x) => (x.id === eleveId ? { ...x, photoId: undefined } : x)),
+          students: c.students.map((s) => (s.id === studentId ? { ...s, photoId: undefined } : s)),
         }))
       },
 
-      // ---- Salles ----
-      ajouterSalle(modeleKey) {
-        const s = (modeleSalle(modeleKey) ?? modeleSalle('vide')!).creer()
-        set((st) => ({ salles: [...st.salles, s], salleCourante: s.id }))
-        planifier('salles', s.id)
-        return s.id
+      // ---- Rooms ----
+      addRoom(templateKey) {
+        const room = (findRoomTemplate(templateKey) ?? findRoomTemplate('empty')!).create()
+        set((s) => ({ rooms: [...s.rooms, room], currentRoomId: room.id }))
+        scheduleSave('rooms', room.id)
+        return room.id
       },
-      renommerSalle: (id, nom) => majSalle(id, (s) => ({ ...s, nom })),
-      choisirSalle: (id) => set({ salleCourante: id }),
-      dupliquerSalle(id) {
-        const src = salleParId(id)
-        if (!src) return
-        const copie = dupliquerSalle(src)
-        set((s) => ({ salles: [...s.salles, copie], salleCourante: copie.id }))
-        planifier('salles', copie.id)
+      renameRoom: (id, name) => updateRoom(id, (r) => ({ ...r, name })),
+      selectRoom: (id) => set({ currentRoomId: id }),
+      duplicateRoom(id) {
+        const source = roomById(id)
+        if (!source) return
+        const copy = duplicateRoom(source)
+        set((s) => ({ rooms: [...s.rooms, copy], currentRoomId: copy.id }))
+        scheduleSave('rooms', copy.id)
       },
-      supprimerSalle(id) {
-        annuler('salles', id)
-        void storage.deleteSalle(id)
-        retirerPlans((p) => p.salleId === id)
+      deleteRoom(id) {
+        cancelSave('rooms', id)
+        void storage.deleteRoom(id)
+        removePlans((p) => p.roomId === id)
         set((s) => {
-          const salles = s.salles.filter((x) => x.id !== id)
-          return { salles, salleCourante: s.salleCourante === id ? salles[0]?.id : s.salleCourante }
+          const rooms = s.rooms.filter((r) => r.id !== id)
+          return { rooms, currentRoomId: s.currentRoomId === id ? rooms[0]?.id : s.currentRoomId }
         })
       },
-      redimensionnerSalle: (id, largeur, hauteur) =>
-        majSalle(id, (s) => ({ ...s, largeur: Math.max(400, largeur), hauteur: Math.max(300, hauteur) })),
+      resizeRoom: (id, width, height) =>
+        updateRoom(id, (r) => ({ ...r, width: Math.max(400, width), height: Math.max(300, height) })),
 
-      ajouterMeuble(salleId, type) {
-        const m = creerMeuble(type, 0, 0)
-        const salle = salleParId(salleId)
-        if (salle) {
-          // Premier emplacement libre sur la grille, en balayant la salle.
-          const libre = (x: number, y: number) => {
-            const r = emprise({ ...m, x, y })
-            return salle.meubles.every((o) => {
-              const e = emprise(o)
-              return r.x >= e.x + e.w || e.x >= r.x + r.w || r.y >= e.y + e.h || e.y >= r.y + r.h
+      addFurniture(roomId, type) {
+        const furniture = createFurniture(type, 0, 0)
+        const room = roomById(roomId)
+        if (room) {
+          // First free spot on the grid, scanning the room.
+          const isFree = (x: number, y: number) => {
+            const rect = footprint({ ...furniture, x, y })
+            return room.furniture.every((other) => {
+              const o = footprint(other)
+              return rect.x >= o.x + o.w || o.x >= rect.x + rect.w || rect.y >= o.y + o.h || o.y >= rect.y + rect.h
             })
           }
-          const pas = 20
-          scan: for (let y = 20; y + m.hauteur <= salle.hauteur; y += pas)
-            for (let x = 20; x + m.largeur <= salle.largeur; x += pas)
-              if (libre(x, y)) {
-                m.x = x
-                m.y = y
+          const step = 20
+          scan: for (let y = 20; y + furniture.height <= room.height; y += step)
+            for (let x = 20; x + furniture.width <= room.width; x += step)
+              if (isFree(x, y)) {
+                furniture.x = x
+                furniture.y = y
                 break scan
               }
         }
-        majSalle(salleId, (s) => ({ ...s, meubles: [...s.meubles, m] }))
-        return m.id
+        updateRoom(roomId, (r) => ({ ...r, furniture: [...r.furniture, furniture] }))
+        return furniture.id
       },
-      deplacerMeubles: (salleId, positions) => {
-        const par = new Map(positions.map((p) => [p.id, p]))
-        majSalle(salleId, (s) => ({
-          ...s,
-          meubles: s.meubles.map((m) => {
-            const p = par.get(m.id)
-            return p ? { ...m, x: p.x, y: p.y } : m
+      moveFurniture: (roomId, positions) => {
+        const byId = new Map(positions.map((p) => [p.id, p]))
+        updateRoom(roomId, (r) => ({
+          ...r,
+          furniture: r.furniture.map((f) => {
+            const position = byId.get(f.id)
+            return position ? { ...f, x: position.x, y: position.y } : f
           }),
         }))
       },
-      pivoterMeubles: (salleId, ids) =>
-        majSalle(salleId, (s) => ({
-          ...s,
-          meubles: s.meubles.map((m) => {
-            if (!ids.includes(m.id)) return m
-            const next = { ...m, rotation: ((m.rotation + 90) % 360) as Rotation }
-            // On garde l'emprise dans la salle et alignée sur la grille.
-            const { dx, dy } = aimanter(emprise(next), [], s)
-            return { ...next, x: next.x + dx, y: next.y + dy }
+      rotateFurniture: (roomId, ids) =>
+        updateRoom(roomId, (r) => ({
+          ...r,
+          furniture: r.furniture.map((f) => {
+            if (!ids.includes(f.id)) return f
+            const rotated = { ...f, rotation: ((f.rotation + 90) % 360) as Rotation }
+            // Keep the footprint inside the room and aligned on the grid.
+            const { dx, dy } = snap(footprint(rotated), [], r)
+            return { ...rotated, x: rotated.x + dx, y: rotated.y + dy }
           }),
         })),
-      dupliquerMeubles(salleId, ids) {
-        const copies = (salleParId(salleId)?.meubles ?? []).filter((m) => ids.includes(m.id)).map((m) => dupliquerMeuble(m))
-        majSalle(salleId, (s) => ({ ...s, meubles: [...s.meubles, ...copies] }))
-        return copies.map((m) => m.id)
+      duplicateFurnitureItems(roomId, ids) {
+        const copies = (roomById(roomId)?.furniture ?? [])
+          .filter((f) => ids.includes(f.id))
+          .map((f) => duplicateFurniture(f))
+        updateRoom(roomId, (r) => ({ ...r, furniture: [...r.furniture, ...copies] }))
+        return copies.map((f) => f.id)
       },
-      supprimerMeubles: (salleId, ids) =>
-        majSalle(salleId, (s) => ({ ...s, meubles: s.meubles.filter((m) => !ids.includes(m.id)) })),
+      deleteFurniture: (roomId, ids) =>
+        updateRoom(roomId, (r) => ({ ...r, furniture: r.furniture.filter((f) => !ids.includes(f.id)) })),
 
       // ---- Plans ----
-      creerPlan(classeId, salleId) {
-        const c = get().classes.find((x) => x.id === classeId)
-        const s = salleParId(salleId)
+      createPlan(classId, roomId) {
+        const schoolClass = get().classes.find((c) => c.id === classId)
+        const room = roomById(roomId)
         const plan: Plan = {
           id: newId(),
-          nom: `${c?.nom ?? 'Classe'} — ${s?.nom ?? 'Salle'}`,
-          classeId,
-          salleId,
-          affectations: {},
-          regles: [],
-          statut: 'brouillon',
+          name: `${schoolClass?.name ?? 'Classe'} — ${room?.name ?? 'Salle'}`,
+          classId,
+          roomId,
+          assignments: {},
+          rules: [],
+          status: 'draft',
           notes: '',
-          creeLe: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
         }
-        set((st) => ({ plans: [...st.plans, plan], planCourant: plan.id, vue: 'plans' }))
-        planifier('plans', plan.id)
+        set((s) => ({ plans: [...s.plans, plan], currentPlanId: plan.id, view: 'plans' }))
+        scheduleSave('plans', plan.id)
         return plan.id
       },
-      renommerPlan: (id, nom) => majPlan(id, (p) => ({ ...p, nom })),
-      choisirPlan: (id) => set({ planCourant: id }),
-      supprimerPlan: (id) => retirerPlans((p) => p.id === id),
-      placer: (planId, eleveId, placeId) =>
-        majPlan(planId, (p) => ({ ...p, affectations: placerAff(p.affectations, eleveId, placeId) })),
-      viderPlan: (planId) => majPlan(planId, (p) => ({ ...p, affectations: {} })),
-      remplirPlan(planId) {
-        const p = get().plans.find((x) => x.id === planId)
-        const c = p && get().classes.find((x) => x.id === p.classeId)
-        const s = p && salleParId(p.salleId)
-        if (p && c && s) majPlan(planId, (x) => ({ ...x, affectations: remplirAleatoire(x, c, s) }))
+      renamePlan: (id, name) => updatePlan(id, (p) => ({ ...p, name })),
+      selectPlan: (id) => set({ currentPlanId: id }),
+      deletePlan: (id) => removePlans((p) => p.id === id),
+      assignSeat: (planId, studentId, seatId) =>
+        updatePlan(planId, (p) => ({ ...p, assignments: assign(p.assignments, studentId, seatId) })),
+      clearPlan: (planId) => updatePlan(planId, (p) => ({ ...p, assignments: {} })),
+      fillPlan(planId) {
+        const plan = get().plans.find((p) => p.id === planId)
+        const schoolClass = plan && get().classes.find((c) => c.id === plan.classId)
+        const room = plan && roomById(plan.roomId)
+        if (plan && schoolClass && room)
+          updatePlan(planId, (p) => ({ ...p, assignments: fillRandomly(p, schoolClass, room) }))
       },
-      ajouterRegle: (planId, regle) =>
-        majPlan(planId, (p) => ({ ...p, regles: [...p.regles, { ...regle, id: newId() } as Regle] })),
-      supprimerRegle: (planId, regleId) =>
-        majPlan(planId, (p) => ({ ...p, regles: p.regles.filter((r) => r.id !== regleId) })),
+      addRule: (planId, rule) =>
+        updatePlan(planId, (p) => ({ ...p, rules: [...p.rules, { ...rule, id: newId() } as Rule] })),
+      deleteRule: (planId, ruleId) =>
+        updatePlan(planId, (p) => ({ ...p, rules: p.rules.filter((r) => r.id !== ruleId) })),
 
-      dupliquerPlan(planId) {
-        const src = get().plans.find((p) => p.id === planId)
-        if (!src) return
-        const copie: Plan = {
-          ...structuredClone(src),
+      duplicatePlan(planId) {
+        const source = get().plans.find((p) => p.id === planId)
+        if (!source) return
+        const siblings = get().plans.filter((p) => p.classId === source.classId && p.roomId === source.roomId).length
+        const copy: Plan = {
+          ...structuredClone(source),
           id: newId(),
-          nom: `${src.nom.replace(/ \(hyp\. \d+\)$/, '')} (hyp. ${get().plans.filter((p) => p.classeId === src.classeId && p.salleId === src.salleId).length + 1})`,
-          regles: src.regles.map((r) => ({ ...r, id: newId() })),
-          statut: 'brouillon',
+          name: `${source.name.replace(/ \(hyp\. \d+\)$/, '')} (hyp. ${siblings + 1})`,
+          rules: source.rules.map((r) => ({ ...r, id: newId() })),
+          status: 'draft',
           notes: '',
-          parentId: src.id,
-          creeLe: new Date().toISOString(),
-          testeDepuis: undefined,
+          parentId: source.id,
+          createdAt: new Date().toISOString(),
+          testingSince: undefined,
         }
-        set((st) => ({ plans: [...st.plans, copie], planCourant: copie.id }))
-        planifier('plans', copie.id)
-        return copie.id
+        set((s) => ({ plans: [...s.plans, copy], currentPlanId: copy.id }))
+        scheduleSave('plans', copy.id)
+        return copy.id
       },
-      definirStatut: (planId, statut) =>
-        majPlan(planId, (p) => ({
+      setStatus: (planId, status) =>
+        updatePlan(planId, (p) => ({
           ...p,
-          statut,
-          testeDepuis: statut === 'en_test' && !p.testeDepuis ? new Date().toISOString() : p.testeDepuis,
+          status,
+          testingSince: status === 'testing' && !p.testingSince ? new Date().toISOString() : p.testingSince,
         })),
-      modifierNotes: (planId, notes) => majPlan(planId, (p) => ({ ...p, notes })),
+      setNotes: (planId, notes) => updatePlan(planId, (p) => ({ ...p, notes })),
 
-      async importer(f, mode) {
-        if (mode === 'remplacer') {
-          const { classes, salles, plans } = get()
+      async importData(file, mode) {
+        if (mode === 'replace') {
+          const { classes, rooms, plans } = get()
           await Promise.all([
             ...classes.map((c) => storage.deleteClass(c.id)),
-            ...salles.map((x) => storage.deleteSalle(x.id)),
+            ...rooms.map((r) => storage.deleteRoom(r.id)),
             ...plans.map((p) => storage.deletePlan(p.id)),
             ...(await storage.listPhotoIds()).map((id) => storage.deletePhoto(id)),
           ])
           for (const url of Object.values(get().photoUrls)) URL.revokeObjectURL(url)
-          set({ classes: [], salles: [], plans: [], photoUrls: {}, courante: undefined, salleCourante: undefined, planCourant: undefined })
+          set({
+            classes: [],
+            rooms: [],
+            plans: [],
+            photoUrls: {},
+            currentClassId: undefined,
+            currentRoomId: undefined,
+            currentPlanId: undefined,
+          })
         }
         const urls: Record<string, string> = {}
-        for (const [id, ph] of Object.entries(f.photos)) {
-          const blob = base64VersBlob(ph.base64, ph.type)
+        for (const [id, photo] of Object.entries(file.photos)) {
+          const blob = base64ToBlob(photo.base64, photo.type)
           await storage.putPhoto(id, blob)
-          const ancienne = get().photoUrls[id]
-          if (ancienne) URL.revokeObjectURL(ancienne)
+          const previousUrl = get().photoUrls[id]
+          if (previousUrl) URL.revokeObjectURL(previousUrl)
           urls[id] = URL.createObjectURL(blob)
         }
         await Promise.all([
-          ...f.classes.map((c) => storage.saveClass(c)),
-          ...f.salles.map((x) => storage.saveSalle(x)),
-          ...f.plans.map((p) => storage.savePlan(p)),
+          ...file.classes.map((c) => storage.saveClass(c)),
+          ...file.rooms.map((r) => storage.saveRoom(r)),
+          ...file.plans.map((p) => storage.savePlan(p)),
         ])
-        const fusion = <T extends { id: string }>(avant: T[], nouveaux: T[]) => [
-          ...avant.filter((x) => !nouveaux.some((n) => n.id === x.id)),
-          ...nouveaux,
+        const merge = <T extends { id: string }>(existing: T[], incoming: T[]) => [
+          ...existing.filter((x) => !incoming.some((n) => n.id === x.id)),
+          ...incoming,
         ]
         set((s) => {
-          const classes = fusion(s.classes, f.classes)
-          const salles = fusion(s.salles, f.salles)
-          const plans = fusion(s.plans, f.plans)
+          const classes = merge(s.classes, file.classes)
+          const rooms = merge(s.rooms, file.rooms)
+          const plans = merge(s.plans, file.plans)
           return {
             classes,
-            salles,
+            rooms,
             plans,
             photoUrls: { ...s.photoUrls, ...urls },
-            courante: s.courante ?? classes[0]?.id,
-            salleCourante: s.salleCourante ?? salles[0]?.id,
-            planCourant: s.planCourant ?? plans[0]?.id,
+            currentClassId: s.currentClassId ?? classes[0]?.id,
+            currentRoomId: s.currentRoomId ?? rooms[0]?.id,
+            currentPlanId: s.currentPlanId ?? plans[0]?.id,
           }
         })
-        purger()
+        purgePlans()
       },
     }
   })

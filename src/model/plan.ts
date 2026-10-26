@@ -1,56 +1,58 @@
-import { placesSalle } from './geometry'
-import type { Classe, Plan, Regle, Salle } from './types'
+import { roomSeats } from './geometry'
+import type { Plan, Room, Rule, SchoolClass } from './types'
 
-/** Retire les affectations devenues invalides (place ou élève disparus, doublons). */
-export function purgerAffectations(plan: Plan, classe: Classe | undefined, salle: Salle | undefined) {
-  const places = new Set(salle?.meubles.flatMap((m) => m.places.map((p) => p.id)))
-  const eleves = new Set(classe?.eleves.map((e) => e.id))
-  const vus = new Set<string>()
-  const aff: Record<string, string> = {}
-  for (const [placeId, eleveId] of Object.entries(plan.affectations)) {
-    if (places.has(placeId) && eleves.has(eleveId) && !vus.has(eleveId)) {
-      aff[placeId] = eleveId
-      vus.add(eleveId)
+/** Drops assignments that became invalid (seat or student gone, duplicate student). */
+export function purgeAssignments(plan: Plan, schoolClass: SchoolClass | undefined, room: Room | undefined) {
+  const seats = new Set(room?.furniture.flatMap((f) => f.seats.map((s) => s.id)))
+  const students = new Set(schoolClass?.students.map((s) => s.id))
+  const seen = new Set<string>()
+  const result: Record<string, string> = {}
+  for (const [seatId, studentId] of Object.entries(plan.assignments)) {
+    if (seats.has(seatId) && students.has(studentId) && !seen.has(studentId)) {
+      result[seatId] = studentId
+      seen.add(studentId)
     }
   }
-  return aff
+  return result
 }
 
-/** Place un élève (ou le retire si placeId = null) ; échange si la place est occupée. */
-export function placer(aff: Record<string, string>, eleveId: string, placeId: string | null) {
-  const res = { ...aff }
-  const ancienne = Object.keys(res).find((k) => res[k] === eleveId)
-  if (ancienne) delete res[ancienne]
-  if (placeId) {
-    const occupant = res[placeId]
-    res[placeId] = eleveId
-    if (occupant && ancienne) res[ancienne] = occupant
+/** Puts a student on a seat (or removes them if seatId is null); swaps with the occupant if any. */
+export function assign(assignments: Record<string, string>, studentId: string, seatId: string | null) {
+  const result = { ...assignments }
+  const previous = Object.keys(result).find((k) => result[k] === studentId)
+  if (previous) delete result[previous]
+  if (seatId) {
+    const occupant = result[seatId]
+    result[seatId] = studentId
+    if (occupant && previous) result[previous] = occupant
   }
-  return res
+  return result
 }
 
-/** Répartit au hasard les élèves non placés sur les places libres (ordre de lecture). */
-export function remplirAleatoire(plan: Plan, classe: Classe, salle: Salle, rng = Math.random) {
-  const aff = { ...plan.affectations }
-  const places = placesSalle(salle).map((p) => p.placeId).filter((id) => !aff[id])
-  const places_prises = new Set(Object.values(aff))
-  const restants = classe.eleves.map((e) => e.id).filter((id) => !places_prises.has(id))
-  for (let i = restants.length - 1; i > 0; i--) {
+/** Randomly spreads the unplaced students over the free seats (in reading order). */
+export function fillRandomly(plan: Plan, schoolClass: SchoolClass, room: Room, rng = Math.random) {
+  const assignments = { ...plan.assignments }
+  const freeSeats = roomSeats(room)
+    .map((s) => s.seatId)
+    .filter((id) => !assignments[id])
+  const placed = new Set(Object.values(assignments))
+  const remaining = schoolClass.students.map((s) => s.id).filter((id) => !placed.has(id))
+  for (let i = remaining.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))
-    ;[restants[i], restants[j]] = [restants[j], restants[i]]
+    ;[remaining[i], remaining[j]] = [remaining[j], remaining[i]]
   }
-  places.forEach((placeId, i) => {
-    if (restants[i]) aff[placeId] = restants[i]
+  freeSeats.forEach((seatId, i) => {
+    if (remaining[i]) assignments[seatId] = remaining[i]
   })
-  return aff
+  return assignments
 }
 
-/** Retire les règles qui citent un élève disparu. */
-export function purgerRegles(regles: Regle[], classe: Classe | undefined): Regle[] {
-  const ids = new Set(classe?.eleves.map((e) => e.id))
-  return regles.filter((r) => {
-    if (r.type === 'separer') return ids.has(r.eleveA) && ids.has(r.eleveB)
-    if (r.type === 'influence') return ids.has(r.eleve) && ids.has(r.avec)
+/** Drops the rules that mention a student who no longer exists. */
+export function purgeRules(rules: Rule[], schoolClass: SchoolClass | undefined): Rule[] {
+  const ids = new Set(schoolClass?.students.map((s) => s.id))
+  return rules.filter((r) => {
+    if (r.type === 'separate') return ids.has(r.studentA) && ids.has(r.studentB)
+    if (r.type === 'influence') return ids.has(r.student) && ids.has(r.near)
     return true
   })
 }

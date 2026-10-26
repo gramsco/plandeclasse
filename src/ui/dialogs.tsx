@@ -1,171 +1,207 @@
 import { useMemo, useState } from 'react'
-import { modeleSalle } from '../model/salles'
-import { SalleSvg } from './SalleSvg'
-import { MODELES_SALLE } from '../model/salles'
-import { creerClasseDemo } from '../storage/avatar'
+import { findRoomTemplate, ROOM_TEMPLATES } from '../model/rooms'
+import { createDemoClass } from '../storage/avatar'
 import { useApp } from '../store'
 import { Modal } from './Modal'
+import { RoomSvg } from './RoomSvg'
 
-/** Aperçu de la forme générale d'un modèle de salle. */
-function ApercuModele({ cle }: { cle: string }) {
-  const salle = useMemo(() => modeleSalle(cle)?.creer(), [cle])
-  if (!salle) return null
-  const places = salle.meubles.reduce((n, m) => n + m.places.length, 0)
+/** Preview of the general shape of a room template. */
+function TemplatePreview({ templateKey }: { templateKey: string }) {
+  const room = useMemo(() => findRoomTemplate(templateKey)?.create(), [templateKey])
+  if (!room) return null
+  const seatCount = room.furniture.reduce((n, f) => n + f.seats.length, 0)
   return (
-    <figure className="apercu">
-      <SalleSvg salle={salle} />
-      <figcaption>{places} places</figcaption>
+    <figure className="preview">
+      <RoomSvg room={room} />
+      <figcaption>{seatCount} places</figcaption>
     </figure>
   )
 }
 
-export function NouvelleClasseDialog({ onClose }: { onClose(): void }) {
-  const { ajouterClasse } = useApp()
-  const [nom, setNom] = useState('')
-  const [nb, setNb] = useState(24)
+function RoomPreview({ roomId }: { roomId: string }) {
+  const room = useApp((s) => s.rooms.find((r) => r.id === roomId))
+  if (!room) return null
   return (
-    <Modal titre="Nouvelle classe" onClose={onClose}>
+    <figure className="preview">
+      <RoomSvg room={room} />
+    </figure>
+  )
+}
+
+export function NewClassDialog({ onClose }: { onClose(): void }) {
+  const { addClass } = useApp()
+  const [name, setName] = useState('')
+  const [studentCount, setStudentCount] = useState(24)
+  return (
+    <Modal title="Nouvelle classe" onClose={onClose}>
       <form
         className="form"
         onSubmit={(e) => {
           e.preventDefault()
-          ajouterClasse(nom.trim() || 'Nouvelle classe', nb)
+          addClass(name.trim() || 'Nouvelle classe', studentCount)
           onClose()
         }}
       >
         <label>
           Nom
-          <input autoFocus value={nom} placeholder="6e A" onChange={(e) => setNom(e.target.value)} />
+          <input autoFocus value={name} placeholder="6e A" onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
           Nombre d'élèves à créer
-          <input type="number" min={0} max={60} value={nb} onChange={(e) => setNb(Number(e.target.value))} />
+          <input
+            type="number"
+            min={0}
+            max={60}
+            value={studentCount}
+            onChange={(e) => setStudentCount(Number(e.target.value))}
+          />
           <small>Des élèves « Élève 1… » à renommer (ou 0 pour coller votre liste ensuite).</small>
         </label>
         <div className="form-actions">
-          <button type="button" className="gauche" onClick={() => { void creerClasseDemo(); onClose() }}>
+          <button
+            type="button"
+            className="push-left"
+            onClick={() => {
+              void createDemoClass()
+              onClose()
+            }}
+          >
             Classe fictive de test (28 élèves)
           </button>
-          <button type="button" onClick={onClose}>Annuler</button>
-          <button className="primaire">Créer</button>
+          <button type="button" onClick={onClose}>
+            Annuler
+          </button>
+          <button className="primary">Créer</button>
         </div>
       </form>
     </Modal>
   )
 }
 
-export function NouvelleSalleDialog({ onClose }: { onClose(): void }) {
-  const ajouterSalle = useApp((s) => s.ajouterSalle)
-  const [cle, setCle] = useState(MODELES_SALLE[0].key)
+export function NewRoomDialog({ onClose }: { onClose(): void }) {
+  const addRoom = useApp((s) => s.addRoom)
+  const [templateKey, setTemplateKey] = useState(ROOM_TEMPLATES[0].key)
   return (
-    <Modal titre="Nouvelle salle" onClose={onClose} large>
+    <Modal title="Nouvelle salle" onClose={onClose} wide>
       <form
         className="form"
         onSubmit={(e) => {
           e.preventDefault()
-          ajouterSalle(cle)
+          addRoom(templateKey)
           onClose()
         }}
       >
-        <div className="choix-apercu">
-        <div className="choix">
-          {MODELES_SALLE.map((m) => (
-            <label key={m.key} className={cle === m.key ? 'actif' : ''}>
-              <input type="radio" name="modele" checked={cle === m.key} onChange={() => setCle(m.key)} />
-              <b>{m.nom}</b>
-              <small>{m.description}</small>
-            </label>
-          ))}
-        </div>
-        <ApercuModele cle={cle} />
+        <div className="choices-preview">
+          <div className="choices">
+            {ROOM_TEMPLATES.map((template) => (
+              <label key={template.key} className={templateKey === template.key ? 'active' : ''}>
+                <input
+                  type="radio"
+                  name="template"
+                  checked={templateKey === template.key}
+                  onChange={() => setTemplateKey(template.key)}
+                />
+                <b>{template.label}</b>
+                <small>{template.description}</small>
+              </label>
+            ))}
+          </div>
+          <TemplatePreview templateKey={templateKey} />
         </div>
         <div className="form-actions">
-          <button type="button" onClick={onClose}>Annuler</button>
-          <button className="primaire">Créer</button>
+          <button type="button" onClick={onClose}>
+            Annuler
+          </button>
+          <button className="primary">Créer</button>
         </div>
       </form>
     </Modal>
   )
 }
 
-/** Un plan = une classe dans une salle. Tout peut être créé à la volée. */
-export function NouveauPlanDialog({ onClose }: { onClose(): void }) {
-  const { classes, salles, ajouterClasse, ajouterSalle, creerPlan } = useApp()
-  const [classeChoix, setClasseChoix] = useState(classes[0]?.id ?? 'new')
-  const [nomClasse, setNomClasse] = useState('')
-  const [nb, setNb] = useState(24)
-  const [salleChoix, setSalleChoix] = useState(salles[0]?.id ?? `tpl:${MODELES_SALLE[0].key}`)
+/** A plan puts a class in a room. Both can be created on the fly. */
+export function NewPlanDialog({ onClose }: { onClose(): void }) {
+  const { classes, rooms, addClass, addRoom, createPlan } = useApp()
+  const [classChoice, setClassChoice] = useState(classes[0]?.id ?? 'new')
+  const [newClassName, setNewClassName] = useState('')
+  const [studentCount, setStudentCount] = useState(24)
+  const [roomChoice, setRoomChoice] = useState(rooms[0]?.id ?? `template:${ROOM_TEMPLATES[0].key}`)
 
   return (
-    <Modal titre="Nouveau plan de classe" onClose={onClose} large>
+    <Modal title="Nouveau plan de classe" onClose={onClose} wide>
       <form
         className="form"
         onSubmit={async (e) => {
           e.preventDefault()
-          const classeId =
-            classeChoix === 'new'
-              ? ajouterClasse(nomClasse.trim() || 'Nouvelle classe', nb)
-              : classeChoix === 'demo'
-                ? await creerClasseDemo()
-                : classeChoix
-          const salleId = salleChoix.startsWith('tpl:') ? ajouterSalle(salleChoix.slice(4)) : salleChoix
-          creerPlan(classeId, salleId)
+          const classId =
+            classChoice === 'new'
+              ? addClass(newClassName.trim() || 'Nouvelle classe', studentCount)
+              : classChoice === 'demo'
+                ? await createDemoClass()
+                : classChoice
+          const roomId = roomChoice.startsWith('template:') ? addRoom(roomChoice.slice('template:'.length)) : roomChoice
+          createPlan(classId, roomId)
           onClose()
         }}
       >
         <label>
           Classe (les élèves)
-          <select value={classeChoix} onChange={(e) => setClasseChoix(e.target.value)}>
+          <select value={classChoice} onChange={(e) => setClassChoice(e.target.value)}>
             {classes.map((c) => (
-              <option key={c.id} value={c.id}>{c.nom} ({c.eleves.length} élèves)</option>
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.students.length} élèves)
+              </option>
             ))}
             <option value="new">+ Nouvelle classe…</option>
             <option value="demo">+ Classe fictive de test (28 élèves)</option>
           </select>
         </label>
-        {classeChoix === 'new' && (
-          <div className="ligne">
-            <input placeholder="Nom (6e A)" value={nomClasse} onChange={(e) => setNomClasse(e.target.value)} />
-            <input type="number" min={0} max={60} value={nb} onChange={(e) => setNb(Number(e.target.value))} title="Nombre d'élèves" />
+        {classChoice === 'new' && (
+          <div className="row">
+            <input placeholder="Nom (6e A)" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} />
+            <input
+              type="number"
+              min={0}
+              max={60}
+              value={studentCount}
+              onChange={(e) => setStudentCount(Number(e.target.value))}
+              title="Nombre d'élèves"
+            />
           </div>
         )}
         <label>
           Salle (le lieu)
-          <select value={salleChoix} onChange={(e) => setSalleChoix(e.target.value)}>
-            {salles.length > 0 && (
+          <select value={roomChoice} onChange={(e) => setRoomChoice(e.target.value)}>
+            {rooms.length > 0 && (
               <optgroup label="Mes salles">
-                {salles.map((s) => (
-                  <option key={s.id} value={s.id}>{s.nom}</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
                 ))}
               </optgroup>
             )}
             <optgroup label="Nouvelle salle depuis un modèle">
-              {MODELES_SALLE.map((m) => (
-                <option key={m.key} value={`tpl:${m.key}`}>{m.nom}</option>
+              {ROOM_TEMPLATES.map((template) => (
+                <option key={template.key} value={`template:${template.key}`}>
+                  {template.label}
+                </option>
               ))}
             </optgroup>
           </select>
         </label>
-        {salleChoix.startsWith('tpl:') ? (
-          <ApercuModele cle={salleChoix.slice(4)} />
+        {roomChoice.startsWith('template:') ? (
+          <TemplatePreview templateKey={roomChoice.slice('template:'.length)} />
         ) : (
-          <ApercuSalle id={salleChoix} />
+          <RoomPreview roomId={roomChoice} />
         )}
         <div className="form-actions">
-          <button type="button" onClick={onClose}>Annuler</button>
-          <button className="primaire">Créer le plan</button>
+          <button type="button" onClick={onClose}>
+            Annuler
+          </button>
+          <button className="primary">Créer le plan</button>
         </div>
       </form>
     </Modal>
-  )
-}
-
-function ApercuSalle({ id }: { id: string }) {
-  const salle = useApp((s) => s.salles.find((x) => x.id === id))
-  if (!salle) return null
-  return (
-    <figure className="apercu">
-      <SalleSvg salle={salle} />
-    </figure>
   )
 }

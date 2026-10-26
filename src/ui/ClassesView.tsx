@@ -1,34 +1,56 @@
 import { useState } from 'react'
 import { useApp } from '../store'
-import { NouvelleClasseDialog } from './dialogs'
-import { ElevesPanel } from './ElevesPanel'
+import { NewClassDialog } from './dialogs'
+import { StudentsPanel } from './StudentsPanel'
 
 export function ClassesView() {
-  const { classes, courante, choisirClasse, renommerClasse, dupliquerClasse, supprimerClasse, plans } = useApp()
-  const [dialog, setDialog] = useState(false)
-  const classe = classes.find((c) => c.id === courante)
-  const nbPlans = plans.filter((p) => p.classeId === courante).length
+  const { classes, currentClassId, selectClass, renameClass, duplicateClass, deleteClass, plans } = useApp()
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const schoolClass = classes.find((c) => c.id === currentClassId)
+  const planCount = plans.filter((p) => p.classId === currentClassId).length
 
   return (
     <>
-      <div className="sous-bar">
-        <select value={courante ?? ''} onChange={(e) => choisirClasse(e.target.value)} disabled={!classes.length}>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+      <div className="toolbar">
+        <select value={currentClassId ?? ''} onChange={(e) => selectClass(e.target.value)} disabled={!classes.length}>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
-        <button onClick={() => setDialog(true)}>+ Nouvelle classe</button>
-        {classe && (
+        <button onClick={() => setDialogOpen(true)}>+ Nouvelle classe</button>
+        {schoolClass && (
           <>
-            <button onClick={() => { const n = prompt('Nouveau nom ?', classe.nom)?.trim(); if (n) renommerClasse(classe.id, n) }}>Renommer</button>
-            <button onClick={() => void dupliquerClasse(classe.id)}>Dupliquer</button>
-            <button className="danger" onClick={() =>
-              confirm(`Supprimer « ${classe.nom} », ses photos et ${nbPlans} plan(s) ?`) && supprimerClasse(classe.id)}>Supprimer</button>
+            <button
+              onClick={() => {
+                const name = prompt('Nouveau nom ?', schoolClass.name)?.trim()
+                if (name) renameClass(schoolClass.id, name)
+              }}
+            >
+              Renommer
+            </button>
+            <button onClick={() => void duplicateClass(schoolClass.id)}>Dupliquer</button>
+            <button
+              className="danger"
+              onClick={() =>
+                confirm(`Supprimer « ${schoolClass.name} », ses photos et ${planCount} plan(s) ?`) &&
+                deleteClass(schoolClass.id)
+              }
+            >
+              Supprimer
+            </button>
           </>
         )}
       </div>
       <main>
-        {classe ? <ElevesPanel classe={classe} /> : <p className="vide">Aucune classe. Créez-en une pour saisir vos élèves.</p>}
+        {schoolClass ? (
+          <StudentsPanel schoolClass={schoolClass} />
+        ) : (
+          <p className="empty">Aucune classe. Créez-en une pour saisir vos élèves.</p>
+        )}
       </main>
-      {dialog && <NouvelleClasseDialog onClose={() => setDialog(false)} />}
+      {dialogOpen && <NewClassDialog onClose={() => setDialogOpen(false)} />}
     </>
   )
 }

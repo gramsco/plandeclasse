@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "17 5 * * 1" # chaque lundi : de nouvelles failles sont publiées sans que le code change
+    - cron: '17 5 * * 1' # every Monday: new vulnerabilities are published even when the code does not change
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   trivy:
-    name: Trivy (dépendances, secrets, configuration)
+    name: Trivy (dependencies, secrets, configuration)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,8 +27,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # 1) Rapport SARIF dans l'onglet « Security » de GitHub (n'échoue pas).
-      - name: Scan Trivy (rapport)
+      # 1) SARIF report in GitHub's Security tab (never fails).
+      - name: Trivy scan (report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -36,27 +36,27 @@ jobs:
           scanners: vuln,secret,misconfig
           format: sarif
           output: trivy.sarif
-          exit-code: "0"
-      - name: Publier le rapport
+          exit-code: '0'
+      - name: Publish the report
         if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: trivy.sarif
           category: trivy
 
-      # 2) Porte de qualité : échoue sur toute faille HIGH/CRITICAL, ou tout secret.
-      - name: Scan Trivy (bloquant)
+      # 2) Quality gate: fails on any HIGH/CRITICAL vulnerability, or any secret.
+      - name: Trivy scan (blocking)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
-          exit-code: "1"
+          exit-code: '1'
           format: table
 
   codeql:
-    name: CodeQL (analyse statique du code)
+    name: CodeQL (static code analysis)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -76,7 +76,7 @@ jobs:
           category: codeql
 
   dependency-review:
-    name: Revue des dépendances ajoutées
+    name: Review of added dependencies
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:

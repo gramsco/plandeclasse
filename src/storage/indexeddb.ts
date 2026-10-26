@@ -1,19 +1,21 @@
 import type { Storage } from './storage'
 
 const DB_NAME = 'plandeclasse'
-type StoreName = 'classes' | 'salles' | 'plans' | 'photos' | 'meta'
+type StoreName = 'classes' | 'rooms' | 'plans' | 'photos' | 'meta'
 
-const req = <T>(r: IDBRequest<T>) =>
+const request = <T>(r: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
     r.onsuccess = () => resolve(r.result)
     r.onerror = () => reject(r.error)
   })
 
 /**
- * Migrations de la STRUCTURE de la base (object stores). L'index i migre de la version i vers i+1.
- * Ne jamais modifier une étape existante : en ajouter une et incrémenter DB_VERSION (implicite).
+ * Migrations of the database STRUCTURE (object stores). Entry `i` migrates from version `i` to
+ * `i + 1`. Never edit an existing step: add a new one (the version number follows the array length).
+ * Records are copied as they are; the shape of their content is migrated separately
+ * (see `model/migrations.ts`).
  */
-const MIGRATIONS_DB: ((db: IDBDatabase) => void)[] = [
+const DB_MIGRATIONS: ((db: IDBDatabase, tx: IDBTransaction) => void)[] = [
   (db) => {
     db.createObjectStore('classes', { keyPath: 'id' })
     db.createObjectStore('photos')
@@ -25,17 +27,26 @@ const MIGRATIONS_DB: ((db: IDBDatabase) => void)[] = [
   (db) => {
     db.createObjectStore('meta')
   },
+  // `salles` → `rooms`
+  (db, tx) => {
+    const rooms = db.createObjectStore('rooms', { keyPath: 'id' })
+    const read = tx.objectStore('salles').getAll()
+    read.onsuccess = () => {
+      for (const record of read.result) rooms.put(record)
+      db.deleteObjectStore('salles')
+    }
+  },
 ]
-const DB_VERSION = MIGRATIONS_DB.length
+const DB_VERSION = DB_MIGRATIONS.length
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const open = indexedDB.open(DB_NAME, DB_VERSION)
-    open.onupgradeneeded = (e) => {
-      for (let v = e.oldVersion; v < DB_VERSION; v++) MIGRATIONS_DB[v](open.result)
+    open.onupgradeneeded = (event) => {
+      for (let v = event.oldVersion; v < DB_VERSION; v++) DB_MIGRATIONS[v](open.result, open.transaction!)
     }
     open.onsuccess = () => {
-      // Une autre fenêtre (plus récente) veut migrer la base : on libère la connexion.
+      // Another (newer) tab wants to upgrade the database: release our connection.
       open.result.onversionchange = () => open.result.close()
       resolve(open.result)
     }
@@ -45,44 +56,46 @@ function openDb(): Promise<IDBDatabase> {
 }
 
 export function indexedDbStorage(): Storage {
-  const dbp = openDb()
+  const dbPromise = openDb()
   const store = async (name: StoreName, mode: IDBTransactionMode) =>
-    (await dbp).transaction(name, mode).objectStore(name)
-  const all = (name: StoreName) => async () => req((await store(name, 'readonly')).getAll())
-  const put = (name: StoreName) => async (x: unknown) => void (await req((await store(name, 'readwrite')).put(x)))
-  const del = (name: StoreName) => async (id: string) => void (await req((await store(name, 'readwrite')).delete(id)))
+    (await dbPromise).transaction(name, mode).objectStore(name)
+  const all = (name: StoreName) => async () => request((await store(name, 'readonly')).getAll())
+  const put = (name: StoreName) => async (record: unknown) =>
+    void (await request((await store(name, 'readwrite')).put(record)))
+  const remove = (name: StoreName) => async (id: string) =>
+    void (await request((await store(name, 'readwrite')).delete(id)))
 
   return {
     loadClasses: all('classes'),
     saveClass: put('classes'),
-    deleteClass: del('classes'),
-    loadSalles: all('salles'),
-    saveSalle: put('salles'),
-    deleteSalle: del('salles'),
+    deleteClass: remove('classes'),
+    loadRooms: all('rooms'),
+    saveRoom: put('rooms'),
+    deleteRoom: remove('rooms'),
     loadPlans: all('plans'),
     savePlan: put('plans'),
-    deletePlan: del('plans'),
+    deletePlan: remove('plans'),
     async putPhoto(id, blob) {
-      await req((await store('photos', 'readwrite')).put(blob, id))
+      await request((await store('photos', 'readwrite')).put(blob, id))
     },
     async getPhoto(id) {
-      return req((await store('photos', 'readonly')).get(id))
+      return request((await store('photos', 'readonly')).get(id))
     },
-    deletePhoto: del('photos'),
-    async getMeta<T>(cle: string) {
-      return req((await store('meta', 'readonly')).get(cle)) as Promise<T | undefined>
-    },
-    async setMeta(cle, valeur) {
-      await req((await store('meta', 'readwrite')).put(valeur, cle))
-    },
+    deletePhoto: remove('photos'),
     async listPhotoIds() {
-      return (await req((await store('photos', 'readonly')).getAllKeys())) as string[]
+      return (await request((await store('photos', 'readonly')).getAllKeys())) as string[]
+    },
+    async getMeta<T>(key: string) {
+      return request((await store('meta', 'readonly')).get(key)) as Promise<T | undefined>
+    },
+    async setMeta(key, value) {
+      await request((await store('meta', 'readwrite')).put(value, key))
     },
   }
 }
 
-/** Demande au navigateur de ne pas évincer les données. */
-export async function demanderPersistance() {
+/** Asks the browser not to evict our data under storage pressure. */
+export async function requestPersistence() {
   try {
     return await navigator.storage?.persist?.()
   } catch {

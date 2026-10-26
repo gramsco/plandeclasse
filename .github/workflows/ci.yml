@@ -24,10 +24,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Vérifier les signatures et la provenance des paquets
+      - name: Verify package signatures and provenance
         run: npm audit signatures
-      - name: Vulnérabilités connues (dépendances de production)
+      - name: Known vulnerabilities (production dependencies)
         run: npm audit --omit=dev --audit-level=high
+      - run: npm run typecheck
       - run: npm run lint
+      - run: npm run lint:lang
+      - run: npm run format:check
       - run: npm test
       - run: npm run build

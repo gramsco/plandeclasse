@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // « prompt » : une nouvelle version n'est appliquée qu'à la demande, jamais en plein travail.
+      // "prompt": a new version is only applied on request, never in the middle of the user's work.
       registerType: 'prompt',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {

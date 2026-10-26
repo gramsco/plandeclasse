@@ -1,4 +1,4 @@
-// Génère les icônes PWA (PNG) sans dépendance : node scripts/icons.mjs
+// Generates the PWA icons (PNG) without any dependency: node scripts/icons.mjs
 import { deflateSync } from 'node:zlib'
 import { mkdirSync, writeFileSync } from 'node:fs'
 
@@ -39,7 +39,7 @@ const png = (w, h, rgba) => {
   ])
 }
 
-// Distance signée à un rectangle arrondi (centre cx,cy ; demi-taille hx,hy ; rayon r).
+// Signed distance to a rounded rectangle (centre cx,cy; half-size hx,hy; radius r).
 const sdRect = (px, py, cx, cy, hx, hy, r) => {
   const qx = Math.abs(px - cx) - hx + r
   const qy = Math.abs(py - cy) - hy + r
@@ -50,8 +50,13 @@ const cover = (d) => Math.min(1, Math.max(0, 0.5 - d))
 function icone(size, { arrondi }) {
   const buf = Buffer.alloc(size * size * 4)
   const u = size / 100
-  // Contenu dans la zone sûre (≈ 60 % centraux) pour rester lisible en masque circulaire.
-  const bureaux = [[34, 52], [66, 52], [34, 70], [66, 70]].map(([x, y]) => [x * u, y * u, 11 * u, 6 * u, 2 * u])
+  // Content stays inside the safe zone (≈ central 60%) so it survives a circular mask.
+  const bureaux = [
+    [34, 52],
+    [66, 52],
+    [34, 70],
+    [66, 70],
+  ].map(([x, y]) => [x * u, y * u, 11 * u, 6 * u, 2 * u])
   const prof = [50 * u, 34 * u, 17 * u, 4.5 * u, 2 * u]
   for (let y = 0; y < size; y++)
     for (let x = 0; x < size; x++) {
@@ -75,4 +80,4 @@ writeFileSync('public/icons/icon-192.png', icone(192, { arrondi: true }))
 writeFileSync('public/icons/icon-512.png', icone(512, { arrondi: true }))
 writeFileSync('public/icons/icon-maskable-512.png', icone(512, { arrondi: false }))
 writeFileSync('public/icons/apple-touch-icon.png', icone(180, { arrondi: false }))
-console.log('Icônes générées dans public/icons')
+console.log('Icons generated in public/icons')

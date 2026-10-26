@@ -1,103 +1,117 @@
-export type Feu = 'vert' | 'orange' | 'rouge'
-export const FEUX: Feu[] = ['vert', 'orange', 'rouge']
-export const LIBELLE_FEU: Record<Feu, string> = { vert: 'Sympa', orange: 'À surveiller', rouge: 'Perturbateur' }
+export type TrafficLight = 'green' | 'orange' | 'red'
+export const TRAFFIC_LIGHTS: TrafficLight[] = ['green', 'orange', 'red']
+export const TRAFFIC_LIGHT_LABELS: Record<TrafficLight, string> = {
+  green: 'Sympa',
+  orange: 'À surveiller',
+  red: 'Perturbateur',
+}
 
-export type Regle =
-  | { id: string; type: 'separer'; eleveA: string; eleveB: string }
-  | { id: string; type: 'couleurs'; a: Feu; b: Feu }
-  | { id: string; type: 'influence'; eleve: string; avec: string; devient: Feu }
+/** French colour names, for messages shown to the user (the values themselves are English). */
+export const TRAFFIC_LIGHT_COLOR_NAMES: Record<TrafficLight, string> = { green: 'vert', orange: 'orange', red: 'rouge' }
 
-export type Genre = 'fille' | 'garcon'
+export type Rule =
+  | { id: string; type: 'separate'; studentA: string; studentB: string }
+  | { id: string; type: 'colors'; a: TrafficLight; b: TrafficLight }
+  | { id: string; type: 'influence'; student: string; near: string; becomes: TrafficLight }
 
-/** Élève, ou AESH (role = 'aesh') qui accompagne certains élèves. */
-export type Eleve = {
+export type Gender = 'girl' | 'boy'
+export const GENDER_LABELS: Record<Gender, string> = { girl: 'fille', boy: 'garçon' }
+
+/** A student, or an AESH (role = 'aesh', a classroom aide) who supports some students. */
+export type Student = {
   id: string
-  prenom: string
-  nom: string
+  firstName: string
+  lastName: string
   photoId?: string
-  annotations: string[] // PAP, PPS, DYS… (libres)
-  feu: Feu
-  genre?: Genre // non renseigné tant qu'on ne l'a pas choisi
-  role: 'eleve' | 'aesh'
-  accompagne: string[]
+  annotations: string[] // free-form labels such as PAP, PPS, DYS…
+  light: TrafficLight
+  gender?: Gender // unset until the user picks one
+  role: 'student' | 'aesh'
+  supports: string[] // ids of the students an AESH supports
 }
 
-/** Une classe = une liste de personnes (indépendante de tout lieu). */
-export type Classe = {
+/** A school class is a list of people, independent of any physical room. */
+export type SchoolClass = {
   id: string
-  nom: string
-  eleves: Eleve[]
+  name: string
+  students: Student[]
 }
 
-export type Place = { id: string; dx: number; dy: number } // décalage depuis le centre de la table, non pivoté
+/** Offset from the centre of the (unrotated) furniture. */
+export type Seat = { id: string; dx: number; dy: number }
 
-export type TypeMeuble = 'individuelle' | 'double' | 'ilot' | 'chaise' | 'prof'
+export type FurnitureType = 'single' | 'double' | 'island' | 'chair' | 'teacher'
 export type Rotation = 0 | 90 | 180 | 270
 
-export type Meuble = {
+export type Furniture = {
   id: string
-  type: TypeMeuble
-  x: number // coin haut-gauche de la table non pivotée
+  type: FurnitureType
+  x: number // top-left corner of the unrotated furniture
   y: number
   rotation: Rotation
-  largeur: number
-  hauteur: number
-  places: Place[]
+  width: number
+  height: number
+  seats: Seat[]
 }
 
-/** Une salle = un lieu physique : tables et places. */
-export type Salle = {
+/** A room is a physical place: furniture and seats. */
+export type Room = {
   id: string
-  nom: string
-  largeur: number
-  hauteur: number
-  grille: number
-  meubles: Meuble[]
+  name: string
+  width: number
+  height: number
+  grid: number
+  furniture: Furniture[]
 }
 
-export type StatutPlan = 'brouillon' | 'en_test' | 'retenu' | 'abandonne'
-export const LIBELLE_STATUT: Record<StatutPlan, string> = {
-  brouillon: 'Hypothèse',
-  en_test: 'En test',
-  retenu: 'Retenu',
-  abandonne: 'Abandonné',
+export type PlanStatus = 'draft' | 'testing' | 'adopted' | 'abandoned'
+export const PLAN_STATUS_LABELS: Record<PlanStatus, string> = {
+  draft: 'Hypothèse',
+  testing: 'En test',
+  adopted: 'Retenu',
+  abandoned: 'Abandonné',
 }
 
-/** Un plan = une classe placée dans une salle ; c'est aussi une hypothèse à éprouver. */
+/** A plan puts a school class in a room. It is also a hypothesis to try out in real life. */
 export type Plan = {
   id: string
-  nom: string
-  classeId: string
-  salleId: string
-  affectations: Record<string, string> // placeId -> eleveId
-  regles: Regle[]
-  statut: StatutPlan
+  name: string
+  classId: string
+  roomId: string
+  assignments: Record<string, string> // seatId -> studentId
+  rules: Rule[]
+  status: PlanStatus
   notes: string
   parentId?: string
-  creeLe: string
-  testeDepuis?: string
+  createdAt: string
+  testingSince?: string
 }
 
 export const newId = () => crypto.randomUUID()
 
-export const newClasse = (nom: string, nbEleves = 0): Classe => ({
+export const newStudent = (firstName: string, lastName = ''): Student => ({
   id: newId(),
-  nom,
-  eleves: Array.from({ length: nbEleves }, (_, i) => newEleve(`Élève ${i + 1}`)),
-})
-
-export const newEleve = (prenom: string, nom = ''): Eleve => ({
-  id: newId(),
-  prenom,
-  nom,
+  firstName,
+  lastName,
   annotations: [],
-  feu: 'vert',
-  role: 'eleve',
-  accompagne: [],
+  light: 'green',
+  role: 'student',
+  supports: [],
 })
 
-/** Annotations courantes proposées (libellé → signification). */
-export const ANNOTATIONS_COURANTES: Record<string, string> = {
+export const newAesh = (firstName: string, lastName = ''): Student => ({
+  ...newStudent(firstName, lastName),
+  role: 'aesh',
+})
+
+export const newSchoolClass = (name: string, studentCount = 0): SchoolClass => ({
+  id: newId(),
+  name,
+  students: Array.from({ length: studentCount }, (_, i) => newStudent(`Élève ${i + 1}`)),
+})
+
+/** Common annotations offered in the UI (label → meaning). */
+export const COMMON_ANNOTATIONS: Record<string, string> = {
   PAP: "Plan d'accompagnement personnalisé",
   PPS: 'Projet personnalisé de scolarisation',
   PAI: "Projet d'accueil individualisé",
@@ -108,67 +122,68 @@ export const ANNOTATIONS_COURANTES: Record<string, string> = {
   TDAH: "Trouble de l'attention",
 }
 
-export const newAesh = (prenom: string, nom = ''): Eleve => ({ ...newEleve(prenom, nom), role: 'aesh' })
+export const isAesh = (s: Student) => s.role === 'aesh'
+export const fullName = (s: Student) => `${s.firstName} ${s.lastName}`.trim()
 
-export const estAesh = (e: Eleve) => e.role === 'aesh'
-export const nomComplet = (e: Eleve) => `${e.prenom} ${e.nom}`.trim()
-
-// ---- Normalisation : complète les données anciennes ou importées ----
+// ---- Normalisation: fills in defaults for data coming from older versions or imported files ----
+// These accept any input on purpose: they are the boundary with untrusted persisted data.
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const normaliserEleve = (e: any): Eleve => ({
-  id: String(e.id),
-  prenom: String(e.prenom ?? ''),
-  nom: String(e.nom ?? ''),
-  photoId: e.photoId ? String(e.photoId) : undefined,
-  annotations: Array.isArray(e.annotations) ? e.annotations.map(String) : [],
-  feu: FEUX.includes(e.feu) ? e.feu : 'vert',
-  genre: e.genre === 'fille' || e.genre === 'garcon' ? e.genre : undefined,
-  role: e.role === 'aesh' ? 'aesh' : 'eleve',
-  accompagne: Array.isArray(e.accompagne) ? e.accompagne : [],
-})
-
-export const normaliserClasse = (c: any): Classe => ({
-  id: String(c.id),
-  nom: String(c.nom ?? 'Classe'),
-  eleves: (c.eleves ?? []).map(normaliserEleve),
-})
-
-export const normaliserSalle = (s: any): Salle => ({
+export const normalizeStudent = (s: any): Student => ({
   id: String(s.id),
-  nom: String(s.nom ?? 'Salle'),
-  largeur: Number(s.largeur) || 1200,
-  hauteur: Number(s.hauteur) || 800,
-  grille: Number(s.grille) || 10,
-  meubles: Array.isArray(s.meubles) ? s.meubles : [],
+  firstName: String(s.firstName ?? ''),
+  lastName: String(s.lastName ?? ''),
+  photoId: s.photoId ? String(s.photoId) : undefined,
+  annotations: Array.isArray(s.annotations) ? s.annotations.map(String) : [],
+  light: TRAFFIC_LIGHTS.includes(s.light) ? s.light : 'green',
+  gender: s.gender === 'girl' || s.gender === 'boy' ? s.gender : undefined,
+  role: s.role === 'aesh' ? 'aesh' : 'student',
+  supports: Array.isArray(s.supports) ? s.supports : [],
 })
 
-export const normaliserPlan = (p: any): Plan => ({
+export const normalizeClass = (c: any): SchoolClass => ({
+  id: String(c.id),
+  name: String(c.name ?? 'Classe'),
+  students: (c.students ?? []).map(normalizeStudent),
+})
+
+export const normalizeRoom = (r: any): Room => ({
+  id: String(r.id),
+  name: String(r.name ?? 'Salle'),
+  width: Number(r.width) || 1200,
+  height: Number(r.height) || 800,
+  grid: Number(r.grid) || 10,
+  furniture: Array.isArray(r.furniture) ? r.furniture : [],
+})
+
+export const normalizePlan = (p: any): Plan => ({
   id: String(p.id),
-  nom: String(p.nom ?? 'Plan'),
-  classeId: String(p.classeId),
-  salleId: String(p.salleId),
-  affectations: p.affectations && typeof p.affectations === 'object' ? p.affectations : {},
-  regles: Array.isArray(p.regles) ? p.regles.filter((r: any) => r && ['separer', 'couleurs', 'influence'].includes(r.type)) : [],
-  statut: p.statut in LIBELLE_STATUT ? p.statut : 'brouillon',
+  name: String(p.name ?? 'Plan'),
+  classId: String(p.classId),
+  roomId: String(p.roomId),
+  assignments: p.assignments && typeof p.assignments === 'object' ? p.assignments : {},
+  rules: Array.isArray(p.rules)
+    ? p.rules.filter((r: any) => r && ['separate', 'colors', 'influence'].includes(r.type))
+    : [],
+  status: p.status in PLAN_STATUS_LABELS ? p.status : 'draft',
   notes: String(p.notes ?? ''),
   parentId: p.parentId ? String(p.parentId) : undefined,
-  creeLe: String(p.creeLe ?? new Date().toISOString()),
-  testeDepuis: p.testeDepuis ? String(p.testeDepuis) : undefined,
+  createdAt: String(p.createdAt ?? new Date().toISOString()),
+  testingSince: p.testingSince ? String(p.testingSince) : undefined,
 })
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-/** Une ligne = un élève, "Prénom Nom" ou "Nom, Prénom". */
-export function parseListeEleves(texte: string): Eleve[] {
-  return texte
+/** One student per line: "First Last" or "Last, First". */
+export function parseStudentList(text: string): Student[] {
+  return text
     .split(/\r?\n/)
-    .map((l) => l.trim())
+    .map((line) => line.trim())
     .filter(Boolean)
-    .map((l) => {
-      if (l.includes(',')) {
-        const [nom, ...rest] = l.split(',')
-        return newEleve(rest.join(',').trim(), nom.trim())
+    .map((line) => {
+      if (line.includes(',')) {
+        const [lastName, ...rest] = line.split(',')
+        return newStudent(rest.join(',').trim(), lastName.trim())
       }
-      const [prenom, ...rest] = l.split(/\s+/)
-      return newEleve(prenom, rest.join(' '))
+      const [firstName, ...rest] = line.split(/\s+/)
+      return newStudent(firstName, rest.join(' '))
     })
 }

@@ -3,4 +3,4 @@ import { createAppStore } from './store'
 
 export const storage = indexedDbStorage()
 export const useApp = createAppStore(storage)
-export type { Vue } from './store'
+export type { View } from './store'

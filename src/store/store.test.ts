@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { construireFichier, lireFichier } from '../io/fichier'
-import { placesSalle } from '../model/geometry'
-import { parseListeEleves } from '../model/types'
+import { buildFile, readFile } from '../io/file'
+import { roomSeats } from '../model/geometry'
+import { LEGACY_V2, legacyFile } from '../model/legacyFixtures'
+import { parseStudentList } from '../model/types'
 import { memoryStorage } from '../storage/memory'
 import { createAppStore } from './store'
 
-const attendre = () => new Promise((r) => setTimeout(r, 10))
+const flush = () => new Promise((resolve) => setTimeout(resolve, 10))
 
-describe('parseListeEleves', () => {
-  it('gère "Prénom Nom" et "Nom, Prénom"', () => {
-    const l = parseListeEleves('Ada Lovelace\n\nTuring, Alan\nPlaton')
-    expect(l.map((e) => [e.prenom, e.nom])).toEqual([
+const newStore = async (storage = memoryStorage()) => {
+  const store = createAppStore(storage, 0)
+  await store.getState().init()
+  return { store, storage, get: store.getState }
+}
+
+describe('parseStudentList', () => {
+  it('handles "First Last" and "Last, First"', () => {
+    const students = parseStudentList('Ada Lovelace\n\nTuring, Alan\nPlaton')
+    expect(students.map((s) => [s.firstName, s.lastName])).toEqual([
       ['Ada', 'Lovelace'],
       ['Alan', 'Turing'],
       ['Platon', ''],
@@ -18,206 +25,202 @@ describe('parseListeEleves', () => {
   })
 })
 
-describe('store', () => {
-  it("supprime les photos avec l'élève et persiste", async () => {
-    const st = memoryStorage()
-    const s = createAppStore(st, 0)
-    await s.getState().init()
-    s.getState().ajouterClasse('6e A')
-    s.getState().ajouterEleve('Ada', 'L')
-    const id = s.getState().classes[0].eleves[0].id
-    await s.getState().definirPhoto(id, new Blob(['x']))
-    const photoId = s.getState().classes[0].eleves[0].photoId!
-    expect(await st.getPhoto(photoId)).toBeDefined()
+describe('students and classes', () => {
+  it('deletes photos with the student and persists changes', async () => {
+    const { storage, get } = await newStore()
+    get().addClass('6e A')
+    get().addStudent('Ada', 'L')
+    const id = get().classes[0].students[0].id
+    await get().setPhoto(id, new Blob(['x']))
+    const photoId = get().classes[0].students[0].photoId!
+    expect(await storage.getPhoto(photoId)).toBeDefined()
 
-    s.getState().supprimerEleve(id)
-    await attendre()
-    expect(await st.getPhoto(photoId)).toBeUndefined()
-    expect((await st.loadClasses())[0].eleves).toHaveLength(0)
+    get().deleteStudent(id)
+    await flush()
+    expect(await storage.getPhoto(photoId)).toBeUndefined()
+    expect((await storage.loadClasses())[0].students).toHaveLength(0)
   })
 
-  it('duplique une classe avec ses photos', async () => {
-    const st = memoryStorage()
-    const s = createAppStore(st, 0)
-    await s.getState().init()
-    s.getState().ajouterClasse('A')
-    s.getState().ajouterEleve('Ada', '')
-    await s.getState().definirPhoto(s.getState().classes[0].eleves[0].id, new Blob(['x']))
-    await s.getState().dupliquerClasse(s.getState().classes[0].id)
-    const [a, b] = s.getState().classes
-    expect(b.eleves[0].photoId).not.toBe(a.eleves[0].photoId)
-    expect(await st.getPhoto(b.eleves[0].photoId!)).toBeDefined()
+  it('duplicates a class together with its photos', async () => {
+    const { storage, get } = await newStore()
+    get().addClass('A')
+    get().addStudent('Ada', '')
+    await get().setPhoto(get().classes[0].students[0].id, new Blob(['x']))
+    await get().duplicateClass(get().classes[0].id)
+    const [original, copy] = get().classes
+    expect(copy.students[0].photoId).not.toBe(original.students[0].photoId)
+    expect(await storage.getPhoto(copy.students[0].photoId!)).toBeDefined()
   })
 
-  it('plan : placer, puis purge quand un élève ou une table disparaît', async () => {
-    const st = memoryStorage()
-    const s = createAppStore(st, 0)
-    await s.getState().init()
-    const classeId = s.getState().ajouterClasse('A', 4)
-    const salleId = s.getState().ajouterSalle('doubles-3x4')
-    const planId = s.getState().creerPlan(classeId, salleId)
-    s.getState().remplirPlan(planId)
-    const plan = () => s.getState().plans[0]
-    expect(Object.keys(plan().affectations)).toHaveLength(4)
-
-    s.getState().supprimerEleve(s.getState().classes[0].eleves[0].id)
-    expect(Object.keys(plan().affectations)).toHaveLength(3)
-
-    const salle = s.getState().salles[0]
-    const [premier] = placesSalle(salle)
-    s.getState().supprimerMeubles(salleId, [premier.meubleId])
-    expect(Object.keys(plan().affectations).every((p) => p !== premier.placeId)).toBe(true)
-
-    await attendre()
-    expect((await st.loadPlans())[0].affectations).toEqual(plan().affectations)
-  })
-
-  it('supprimer une salle ou une classe supprime ses plans', async () => {
-    const s = createAppStore(memoryStorage(), 0)
-    await s.getState().init()
-    const c = s.getState().ajouterClasse('A', 2)
-    const sa = s.getState().ajouterSalle('vide')
-    s.getState().creerPlan(c, sa)
-    s.getState().supprimerSalle(sa)
-    expect(s.getState().plans).toHaveLength(0)
-    expect(s.getState().planCourant).toBeUndefined()
-  })
-
-  it('ajouterMeuble choisit un emplacement libre', async () => {
-    const s = createAppStore(memoryStorage(), 0)
-    await s.getState().init()
-    const sa = s.getState().ajouterSalle('vide')
-    const a = s.getState().ajouterMeuble(sa, 'double')
-    const b = s.getState().ajouterMeuble(sa, 'double')
-    const [ma, mb] = [a, b].map((id) => s.getState().salles[0].meubles.find((m) => m.id === id)!)
-    expect(ma.x === mb.x && ma.y === mb.y).toBe(false)
+  it('removes AESH links and plan rules when a student is deleted', async () => {
+    const { get } = await newStore()
+    const classId = get().addClass('A', 2)
+    const roomId = get().addRoom('empty')
+    const planId = get().createPlan(classId, roomId)
+    get().addAesh('Sam', '')
+    const [student1, student2, aesh] = get().classes[0].students
+    get().setSupports(aesh.id, [student1.id])
+    get().addRule(planId, { type: 'separate', studentA: student1.id, studentB: student2.id })
+    get().deleteStudent(student1.id)
+    expect(get().plans[0].rules).toHaveLength(0)
+    expect(get().classes[0].students.find((s) => s.role === 'aesh')!.supports).toEqual([])
   })
 })
 
-describe('V2 : hypothèses, règles, import/export', () => {
-  it('dupliquer un plan crée une hypothèse liée, avec règles copiées', async () => {
-    const s = createAppStore(memoryStorage(), 0)
-    await s.getState().init()
-    const c = s.getState().ajouterClasse('A', 3)
-    const sa = s.getState().ajouterSalle('doubles-3x4')
-    const p = s.getState().creerPlan(c, sa)
-    s.getState().remplirPlan(p)
-    const [e1, e2] = s.getState().classes[0].eleves
-    s.getState().ajouterRegle(p, { type: 'separer', eleveA: e1.id, eleveB: e2.id })
-    s.getState().definirStatut(p, 'en_test')
-    const h = s.getState().dupliquerPlan(p)!
-    const [orig, copie] = s.getState().plans
-    expect(copie.id).toBe(h)
-    expect(copie).toMatchObject({ statut: 'brouillon', parentId: p, notes: '' })
-    expect(copie.affectations).toEqual(orig.affectations)
-    expect(copie.regles[0].id).not.toBe(orig.regles[0].id)
-    expect(orig.testeDepuis).toBeDefined()
+describe('plans and rooms', () => {
+  it('assigns seats, then purges when a student or a table disappears', async () => {
+    const { storage, get } = await newStore()
+    const classId = get().addClass('A', 4)
+    const roomId = get().addRoom('doubles-3x4')
+    const planId = get().createPlan(classId, roomId)
+    get().fillPlan(planId)
+    const plan = () => get().plans[0]
+    expect(Object.keys(plan().assignments)).toHaveLength(4)
+
+    get().deleteStudent(get().classes[0].students[0].id)
+    expect(Object.keys(plan().assignments)).toHaveLength(3)
+
+    const [first] = roomSeats(get().rooms[0])
+    get().deleteFurniture(roomId, [first.furnitureId])
+    expect(Object.keys(plan().assignments).every((seatId) => seatId !== first.seatId)).toBe(true)
+
+    await flush()
+    expect((await storage.loadPlans())[0].assignments).toEqual(plan().assignments)
   })
 
-  it('supprimer un élève retire les règles et les liens AESH', async () => {
-    const s = createAppStore(memoryStorage(), 0)
-    await s.getState().init()
-    const c = s.getState().ajouterClasse('A', 2)
-    const sa = s.getState().ajouterSalle('vide')
-    const p = s.getState().creerPlan(c, sa)
-    s.getState().ajouterAesh('Sam', '')
-    const [e1, e2, aesh] = s.getState().classes[0].eleves
-    s.getState().definirAccompagnes(aesh.id, [e1.id])
-    s.getState().ajouterRegle(p, { type: 'separer', eleveA: e1.id, eleveB: e2.id })
-    s.getState().supprimerEleve(e1.id)
-    expect(s.getState().plans[0].regles).toHaveLength(0)
-    expect(s.getState().classes[0].eleves.find((e) => e.role === 'aesh')!.accompagne).toEqual([])
+  it('deleting a room or a class deletes its plans', async () => {
+    const { get } = await newStore()
+    const classId = get().addClass('A', 2)
+    const roomId = get().addRoom('empty')
+    get().createPlan(classId, roomId)
+    get().deleteRoom(roomId)
+    expect(get().plans).toHaveLength(0)
+    expect(get().currentPlanId).toBeUndefined()
   })
 
-  it('export puis import (fusion et remplacement) conserve tout, photos comprises', async () => {
-    const st = memoryStorage()
-    const a = createAppStore(st, 0)
-    await a.getState().init()
-    const c = a.getState().ajouterClasseDemo()
-    const sa = a.getState().ajouterSalle('ilots-3x2')
-    a.getState().creerPlan(c, sa)
-    a.getState().remplirPlan(a.getState().plans[0].id)
-    await a.getState().definirPhoto(a.getState().classes[0].eleves[0].id, new Blob(['jpegdata'], { type: 'image/jpeg' }))
-
-    const texte = JSON.stringify(await construireFichier(a.getState(), st))
-    const f = lireFichier(texte)
-    expect(Object.keys(f.photos)).toHaveLength(1)
-
-    const b = createAppStore(memoryStorage(), 0)
-    await b.getState().init()
-    await b.getState().importer(f, 'fusion')
-    await b.getState().importer(f, 'fusion') // idempotent
-    expect(b.getState().classes).toHaveLength(1)
-    expect(b.getState().plans[0].affectations).toEqual(a.getState().plans[0].affectations)
-    const photoId = b.getState().classes[0].eleves[0].photoId!
-    expect(b.getState().photoUrls[photoId]).toBeDefined()
-
-    await b.getState().importer(f, 'remplacer')
-    expect(b.getState().salles).toHaveLength(1)
+  it('addFurniture picks a free spot', async () => {
+    const { get } = await newStore()
+    const roomId = get().addRoom('empty')
+    const a = get().addFurniture(roomId, 'double')
+    const b = get().addFurniture(roomId, 'double')
+    const [fa, fb] = [a, b].map((id) => get().rooms[0].furniture.find((f) => f.id === id)!)
+    expect(fa.x === fb.x && fa.y === fb.y).toBe(false)
   })
 
-  it('refuse un fichier invalide', () => {
-    expect(() => lireFichier('pas du json')).toThrow()
-    expect(() => lireFichier('{"format":"autre"}')).toThrow()
-    expect(() => lireFichier('{"format":"classe","version":99}')).toThrow(/récente/)
+  it('duplicating a plan creates a linked hypothesis with copied rules', async () => {
+    const { get } = await newStore()
+    const classId = get().addClass('A', 3)
+    const roomId = get().addRoom('doubles-3x4')
+    const planId = get().createPlan(classId, roomId)
+    get().fillPlan(planId)
+    const [student1, student2] = get().classes[0].students
+    get().addRule(planId, { type: 'separate', studentA: student1.id, studentB: student2.id })
+    get().setStatus(planId, 'testing')
+    const copyId = get().duplicatePlan(planId)!
+    const [original, copy] = get().plans
+    expect(copy.id).toBe(copyId)
+    expect(copy).toMatchObject({ status: 'draft', parentId: planId, notes: '' })
+    expect(copy.assignments).toEqual(original.assignments)
+    expect(copy.rules[0].id).not.toBe(original.rules[0].id)
+    expect(original.testingSince).toBeDefined()
   })
 })
 
-describe('versions et migrations', () => {
-  const ancien = {
-    classes: [{ id: 'c1', nom: 'Vieille classe', tags: [{ id: 't' }], regles: [{ id: 'r' }], eleves: [{ id: 'e1', prenom: 'Ada', nom: 'L', tagIds: ['t'] }] }],
-    salles: [{ id: 's1', nom: 'S', largeur: 1200, hauteur: 800, grille: 10, meubles: [] }],
-    plans: [{ id: 'p1', nom: 'P', classeId: 'c1', salleId: 's1', affectations: {} }],
+describe('import / export', () => {
+  it('round-trips everything, photos included, with merge and replace', async () => {
+    const source = await newStore()
+    const classId = source.get().addDemoClass()
+    const roomId = source.get().addRoom('islands-3x2')
+    source.get().createPlan(classId, roomId)
+    source.get().fillPlan(source.get().plans[0].id)
+    await source.get().setPhoto(source.get().classes[0].students[0].id, new Blob(['jpegdata'], { type: 'image/jpeg' }))
+
+    const file = readFile(JSON.stringify(await buildFile(source.get(), source.storage)))
+    expect(Object.keys(file.photos)).toHaveLength(1)
+
+    const target = await newStore()
+    await target.get().importData(file, 'merge')
+    await target.get().importData(file, 'merge') // idempotent
+    expect(target.get().classes).toHaveLength(1)
+    expect(target.get().plans[0].assignments).toEqual(source.get().plans[0].assignments)
+    const photoId = target.get().classes[0].students[0].photoId!
+    expect(target.get().photoUrls[photoId]).toBeDefined()
+
+    await target.get().importData(file, 'replace')
+    expect(target.get().rooms).toHaveLength(1)
+  })
+
+  it('rejects invalid files', () => {
+    expect(() => readFile('not json')).toThrow()
+    expect(() => readFile('{"format":"other"}')).toThrow()
+    expect(() => readFile('{"format":"classe","version":99}')).toThrow(/plus récente/)
+    expect(() => readFile('{"format":"classe","version":0}')).toThrow()
+  })
+
+  it('migrates a version 1 file on import', () => {
+    const file = readFile(JSON.stringify(legacyFile(1)))
+    expect(file.version).toBe(3)
+    expect(file.classes[0].students[0]).toMatchObject({ firstName: 'Ada', light: 'green', role: 'student' })
+    expect(file.rooms[0]).toMatchObject({ name: 'S', width: 1200 })
+    expect(file.plans[0]).toMatchObject({ status: 'draft', classId: 'c1', roomId: 's1' })
+  })
+
+  it('migrates a version 2 file (French field names) on import', () => {
+    const file = readFile(JSON.stringify(legacyFile(2)))
+    expect(file.exportedAt).toBe('2026-01-01')
+    expect(file.classes[0].students[0]).toMatchObject({ light: 'red', gender: 'girl' })
+    expect(file.plans[0].rules).toHaveLength(3)
+  })
+
+  it('writes the current version and the application version', async () => {
+    const file = await buildFile({ classes: [], rooms: [], plans: [] }, memoryStorage())
+    expect(file.version).toBe(3)
+    expect(file.application).toBeDefined()
+  })
+})
+
+describe('data versions and migrations', () => {
+  /** Storage holding data as written by an old release (rooms were copied from the old `salles` store). */
+  const legacyStorage = async (version?: number) => {
+    const storage = memoryStorage()
+    await storage.saveClass(LEGACY_V2.classes[0] as never)
+    await storage.saveRoom(LEGACY_V2.salles[0] as never) // lang-ignore: legacy key
+    await storage.savePlan(LEGACY_V2.plans[0] as never)
+    if (version !== undefined) await storage.setMeta('versionDonnees', version)
+    return storage
   }
 
-  it("migre des données d'avant le versionnage, en gardant une sauvegarde", async () => {
-    const st = memoryStorage()
-    await st.saveClass(ancien.classes[0] as never)
-    await st.saveSalle(ancien.salles[0] as never)
-    await st.savePlan(ancien.plans[0] as never)
-    const s = createAppStore(st, 0)
-    await s.getState().init()
-    const e = s.getState().classes[0].eleves[0]
-    expect(e).toMatchObject({ feu: 'vert', role: 'eleve', annotations: [], accompagne: [] })
-    expect(e).not.toHaveProperty('tagIds')
-    expect(s.getState().plans[0]).toMatchObject({ statut: 'brouillon', regles: [], notes: '' })
-    expect(await st.getMeta('versionDonnees')).toBe(2)
-    expect((await st.getMeta<{ version: number }>('sauvegardeAvantMigration'))?.version).toBe(1)
-    expect(await st.loadClasses()).toEqual(s.getState().classes) // migré aussi en base
+  it('migrates data from before the English rename, keeping a backup', async () => {
+    const storage = await legacyStorage(2)
+    const { get } = await newStore(storage)
+    expect(get().classes[0]).toMatchObject({ name: '6e A', students: [{ firstName: 'Ada', light: 'red' }, {}] })
+    expect(get().rooms[0]).toMatchObject({ name: 'Salle 12', furniture: [{ type: 'island' }] })
+    expect(get().plans[0]).toMatchObject({ classId: 'c1', roomId: 's1', status: 'testing' })
+    expect(await storage.getMeta('dataVersion')).toBe(3)
+    expect(await storage.getMeta('versionDonnees')).toBe(3) // lets older releases refuse the new data
+    expect((await storage.getMeta<{ version: number }>('preMigrationBackup'))?.version).toBe(2)
+    expect(await storage.loadClasses()).toEqual(get().classes) // migrated in the database too
   })
 
-  it('base vide : pas de sauvegarde, version courante enregistrée', async () => {
-    const st = memoryStorage()
-    await createAppStore(st, 0).getState().init()
-    expect(await st.getMeta('versionDonnees')).toBe(2)
-    expect(await st.getMeta('sauvegardeAvantMigration')).toBeUndefined()
+  it('treats data without a version marker as version 1', async () => {
+    const storage = await legacyStorage()
+    const { get } = await newStore(storage)
+    expect(get().classes[0].students[0]).toMatchObject({ firstName: 'Ada', role: 'student' })
+    expect((await storage.getMeta<{ version: number }>('preMigrationBackup'))?.version).toBe(1)
   })
 
-  it("refuse (sans rien écrire) des données d'une version plus récente", async () => {
-    const st = memoryStorage()
-    await st.saveClass(ancien.classes[0] as never)
-    await st.setMeta('versionDonnees', 99)
-    const s = createAppStore(st, 0)
-    await s.getState().init()
-    expect(s.getState().erreurVersion).toMatch(/plus récente/)
-    expect(s.getState().classes).toHaveLength(0)
-    expect(await st.getMeta('versionDonnees')).toBe(99)
-    expect((await st.loadClasses())[0]).toEqual(ancien.classes[0])
+  it('does nothing on an empty database', async () => {
+    const { storage } = await newStore()
+    expect(await storage.getMeta('dataVersion')).toBe(3)
+    expect(await storage.getMeta('preMigrationBackup')).toBeUndefined()
   })
 
-  it('un fichier .classe de format 1 est migré à l\'import', () => {
-    const f = lireFichier(JSON.stringify({ format: 'classe', version: 1, ...ancien, photos: {} }))
-    expect(f.version).toBe(2)
-    expect(f.classes[0].eleves[0].feu).toBe('vert')
-    expect(f.plans[0].statut).toBe('brouillon')
-    expect(() => lireFichier('{"format":"classe","version":0}')).toThrow()
-    expect(() => lireFichier('{"format":"classe","version":3}')).toThrow(/plus récente/)
-  })
-
-  it("l'export écrit la version courante et celle de l'application", async () => {
-    const st = memoryStorage()
-    const f = await construireFichier({ classes: [], salles: [], plans: [] }, st)
-    expect(f.version).toBe(2)
-    expect(f.application).toBeDefined()
+  it('refuses, without writing anything, data from a newer release', async () => {
+    const storage = await legacyStorage(99)
+    const { get } = await newStore(storage)
+    expect(get().versionError).toMatch(/plus récente/)
+    expect(get().classes).toHaveLength(0)
+    expect(await storage.getMeta('versionDonnees')).toBe(99)
+    expect((await storage.loadClasses())[0]).toEqual(LEGACY_V2.classes[0])
   })
 })

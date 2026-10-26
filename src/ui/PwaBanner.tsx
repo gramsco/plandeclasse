@@ -1,30 +1,34 @@
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
-/** Informe de la disponibilité hors ligne et propose les mises à jour (jamais appliquées d'office). */
+const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000
+
+/** Tells the user the app works offline and offers updates (never applied automatically). */
 export function PwaBanner() {
   const {
-    needRefresh: [maj, setMaj],
-    offlineReady: [horsLigne, setHorsLigne],
+    needRefresh: [updateAvailable, setUpdateAvailable],
+    offlineReady: [offlineReady, setOfflineReady],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegisteredSW(_url, reg) {
-      // Vérifie une nouvelle version toutes les heures si l'application reste ouverte.
-      if (reg) setInterval(() => void reg.update(), 60 * 60 * 1000)
+    onRegisteredSW(_url, registration) {
+      // Look for a new version every hour if the application stays open.
+      if (registration) setInterval(() => void registration.update(), UPDATE_CHECK_INTERVAL_MS)
     },
   })
-  if (!maj && !horsLigne) return null
+  if (!updateAvailable && !offlineReady) return null
   return (
     <div className="pwa-banner no-print" role="status">
-      {maj ? (
+      {updateAvailable ? (
         <>
           <span>Une nouvelle version est disponible. Vos données sont conservées.</span>
-          <button className="primaire" onClick={() => void updateServiceWorker(true)}>Mettre à jour</button>
-          <button onClick={() => setMaj(false)}>Plus tard</button>
+          <button className="primary" onClick={() => void updateServiceWorker(true)}>
+            Mettre à jour
+          </button>
+          <button onClick={() => setUpdateAvailable(false)}>Plus tard</button>
         </>
       ) : (
         <>
           <span>L'application fonctionne maintenant hors ligne.</span>
-          <button onClick={() => setHorsLigne(false)}>OK</button>
+          <button onClick={() => setOfflineReady(false)}>OK</button>
         </>
       )}
     </div>
