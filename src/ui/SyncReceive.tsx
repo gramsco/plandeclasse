@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { decodePatch } from '../io/patchCodec'
+import { fileOf, readFile } from '../io/file'
+import { decodePayload } from '../io/payloadCodec'
 import { emptyReception, progressOf, receiveFrame, type Reception } from '../model/frames'
-import { diffPatch, PLAN_FIELD_LABELS, STUDENT_FIELD_LABELS, type Change } from '../model/sync'
+import {
+  bundleOf,
+  diffPatch,
+  newcomers,
+  parsePatch,
+  PLAN_FIELD_LABELS,
+  STUDENT_FIELD_LABELS,
+  type Change,
+  type Newcomer,
+} from '../model/sync'
 import { fullName } from '../model/types'
 import { useApp } from '../store'
+import { hasLastSync, setLastSync } from './lastSync'
 
 const SCAN_MS = 120
 const NO_CAMERA =
@@ -28,12 +39,13 @@ const describe = (change: Change) =>
 type Stage =
   | { name: 'scanning' }
   | { name: 'review'; changes: Change[] }
+  | { name: 'review-classes'; items: Newcomer[] }
   | { name: 'failed'; message: string }
-  | { name: 'done'; count: number }
+  | { name: 'done'; count: number; what: string }
 
 /** Reads the QR codes shown by the phone, then lets the teacher pick which edits to apply. */
 export function SyncReceive({ onDone }: { onDone(): void }) {
-  const { classes, plans, applySync } = useApp()
+  const { classes, rooms, plans, applySync, importData } = useApp()
   const video = useRef<HTMLVideoElement>(null)
   const [stage, setStage] = useState<Stage>({ name: 'scanning' })
   const [reception, setReception] = useState<Reception>(emptyReception)
@@ -80,22 +92,48 @@ export function SyncReceive({ onDone }: { onDone(): void }) {
 
   useEffect(() => {
     if (reception.status !== 'complete') return
-    decodePatch(reception.payload).then(
-      (patch) => {
-        const changes = diffPatch(patch, classes, plans)
-        setChosen(new Set(changes.keys()))
-        setStage({ name: 'review', changes })
-      },
-      (e: Error) => setStage({ name: 'failed', message: e.message }),
-    )
+    const read = async (): Promise<Stage> => {
+      const text = await decodePayload(reception.payload)
+      let format: unknown
+      try {
+        format = JSON.parse(text)?.format
+      } catch {
+        // not JSON: the parsers below report it
+      }
+      if (format === 'classe') {
+        const items = newcomers(readFile(text), { classes, rooms, plans })
+        setChosen(new Set(items.keys()))
+        return { name: 'review-classes', items }
+      }
+      const changes = diffPatch(parsePatch(text), classes, plans)
+      setChosen(new Set(changes.keys()))
+      return { name: 'review', changes }
+    }
+    read().then(setStage, (e: Error) => setStage({ name: 'failed', message: e.message }))
     // Decoded once, against the data as it is when the last frame arrives.
     // oxlint-disable-next-line react/exhaustive-deps
   }, [reception])
 
+  const toggle = (index: number, on: boolean) =>
+    setChosen((previous) => {
+      const next = new Set(previous)
+      if (on) next.add(index)
+      else next.delete(index)
+      return next
+    })
+
   const apply = async (changes: Change[]) => {
     const accepted = changes.filter((_, i) => chosen.has(i))
     await applySync(accepted)
-    setStage({ name: 'done', count: accepted.length })
+    setStage({ name: 'done', count: accepted.length, what: 'modification(s) appliquée(s)' })
+  }
+
+  const addClasses = async (items: Newcomer[]) => {
+    const accepted = items.filter((_, i) => chosen.has(i))
+    // A device that starts from nothing has no edits to send yet: what it just received is not one.
+    if (classes.length === 0 && !hasLastSync()) setLastSync(new Date().toISOString())
+    await importData(fileOf(bundleOf(accepted)), 'merge')
+    setStage({ name: 'done', count: accepted.length, what: 'classe(s) ajoutée(s)' })
   }
 
   if (stage.name === 'failed')
@@ -119,7 +157,9 @@ export function SyncReceive({ onDone }: { onDone(): void }) {
   if (stage.name === 'done')
     return (
       <>
-        <p>{stage.count} modification(s) appliquée(s).</p>
+        <p>
+          {stage.count} {stage.what}.
+        </p>
         <div className="form-actions">
           <button className="primary" autoFocus onClick={onDone}>
             OK
@@ -127,6 +167,43 @@ export function SyncReceive({ onDone }: { onDone(): void }) {
         </div>
       </>
     )
+  if (stage.name === 'review-classes') {
+    const { items } = stage
+    return items.length === 0 ? (
+      <>
+        <p>
+          Ces classes sont déjà sur cet appareil. Pour reporter des modifications, utilisez « Envoyer mes modifications
+          ».
+        </p>
+        <div className="form-actions">
+          <button className="primary" autoFocus onClick={onDone}>
+            OK
+          </button>
+        </div>
+      </>
+    ) : (
+      <>
+        <p>Cochez les classes à ajouter sur cet appareil :</p>
+        <ul className="sync-changes">
+          {items.map((item, i) => (
+            <li key={item.schoolClass.id}>
+              <label>
+                <input type="checkbox" checked={chosen.has(i)} onChange={(e) => toggle(i, e.target.checked)} />{' '}
+                <strong>{item.schoolClass.name}</strong> — {item.schoolClass.students.length} personne(s),{' '}
+                {item.plans.length} plan(s)
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div className="form-actions">
+          <button onClick={onDone}>Annuler</button>
+          <button className="primary" disabled={chosen.size === 0} onClick={() => void addClasses(items)}>
+            Ajouter
+          </button>
+        </div>
+      </>
+    )
+  }
   if (stage.name === 'review') {
     const { changes } = stage
     return changes.length === 0 ? (
@@ -147,18 +224,7 @@ export function SyncReceive({ onDone }: { onDone(): void }) {
             return (
               <li key={i}>
                 <label>
-                  <input
-                    type="checkbox"
-                    checked={chosen.has(i)}
-                    onChange={(e) =>
-                      setChosen((c) => {
-                        const next = new Set(c)
-                        if (e.target.checked) next.add(i)
-                        else next.delete(i)
-                        return next
-                      })
-                    }
-                  />{' '}
+                  <input type="checkbox" checked={chosen.has(i)} onChange={(e) => toggle(i, e.target.checked)} />{' '}
                   <strong>{title}</strong> — {detail}
                 </label>
               </li>
@@ -178,7 +244,7 @@ export function SyncReceive({ onDone }: { onDone(): void }) {
   const progress = progressOf(reception)
   return (
     <>
-      <p>Sur le téléphone : Synchroniser → Envoyer. Présentez son écran à la caméra.</p>
+      <p>Sur l'autre appareil : Synchroniser → Envoyer. Présentez son écran à la caméra.</p>
       <video ref={video} className="sync-video" muted playsInline aria-label="Image de la caméra" />
       <p className="hint" role="status">
         {progress ? `Lecture : ${progress.received} code(s) sur ${progress.total}` : 'En attente d’un code…'}

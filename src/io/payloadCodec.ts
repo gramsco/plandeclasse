@@ -1,6 +1,4 @@
-import { parsePatch, type Patch } from '../model/sync'
-
-/** A patch is a few KB of JSON; this only stops a crafted QR code from inflating into memory. */
+/** A payload is a few KB of JSON; this only stops a crafted QR code from inflating into memory. */
 const MAX_JSON_BYTES = 5_000_000
 
 async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream, limit = Infinity) {
@@ -44,19 +42,17 @@ const fromBase64Url = (text: string) => {
 }
 
 /** Compressed, then written with characters that are safe inside a QR code and a frame. */
-export async function encodePatch(patch: Patch): Promise<string> {
-  const json = new TextEncoder().encode(JSON.stringify(patch))
+export async function encodePayload(value: unknown): Promise<string> {
+  const json = new TextEncoder().encode(JSON.stringify(value))
   return toBase64Url(await pipe(json, new CompressionStream('deflate-raw')))
 }
 
-/** Reverse of `encodePatch`. Throws a user-readable Error if the text is not a patch. */
-export async function decodePatch(payload: string): Promise<Patch> {
-  let json: string
+/** Reverse of `encodePayload`, up to the JSON text. Throws a user-readable Error if it is not a payload. */
+export async function decodePayload(payload: string): Promise<string> {
   try {
     const bytes = await pipe(fromBase64Url(payload), new DecompressionStream('deflate-raw'), MAX_JSON_BYTES)
-    json = new TextDecoder().decode(bytes)
+    return new TextDecoder().decode(bytes)
   } catch {
-    throw new Error('Ces modifications ne sont pas valides.')
+    throw new Error('Ces données ne sont pas valides.')
   }
-  return parsePatch(json)
 }

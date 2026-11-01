@@ -3,11 +3,16 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.14.0 — 2026-11-01
+
+- (à rédiger)
+
 ## 0.13.0 — 2026-11-01
 
-- **Modifier sur son téléphone, puis reporter sur l'ordinateur** : le bouton « Synchroniser » affiche vos modifications
-  (places, feux tricolores, annotations, notes…) sous forme de code QR sur le téléphone, et l'ordinateur les lit avec sa
-  caméra. Vous choisissez quelles modifications appliquer. Rien ne passe par Internet.
+- **Passer d'un appareil à l'autre avec des codes QR** : le bouton « Synchroniser » installe vos classes sur votre
+  téléphone (un appareil affiche des codes, l'autre les lit avec sa caméra), puis reporte sur l'ordinateur les
+  modifications faites sur le téléphone (places, feux tricolores, annotations, notes…). Vous choisissez quelles
+  modifications appliquer. Rien ne passe par Internet. Les photos ne sont pas transférées.
 - **Sur téléphone, la vue 3D n'est plus proposée** : elle est lourde et peu pratique sur un petit écran.
 
 ## 0.12.0 — 2026-11-01

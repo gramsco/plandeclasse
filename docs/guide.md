@@ -259,25 +259,32 @@ L'export sert à **sauvegarder** (les navigateurs peuvent perdre les données, v
 Les anciens fichiers restent lisibles : ils sont convertis à l'import. Un fichier créé par une version *plus récente* de l'application est refusé avec un message qui explique pourquoi.
 
 
-### Modifier sur son téléphone, puis reporter sur l'ordinateur
+### Passer d'un appareil à l'autre avec des codes QR (téléphone ↔ ordinateur)
 
-Vous pouvez ajuster un plan ou une fiche élève depuis votre téléphone, sans connexion, puis reporter ces modifications sur l'ordinateur **avec un code QR**. Rien ne passe par Internet : l'ordinateur lit l'écran du téléphone avec sa caméra.
+Vous pouvez installer vos classes sur votre téléphone, les ajuster sans connexion, puis reporter ces modifications sur l'ordinateur, **avec des codes QR**. Rien ne passe par Internet : un appareil affiche des codes, l'autre les lit avec sa caméra. Le bouton **Synchroniser** (à côté de Exporter et Importer) fonctionne dans les deux sens.
 
-**Une fois, pour commencer** : exportez vos données depuis l'ordinateur (bouton **Exporter**) et ouvrez le fichier `.classe` sur le téléphone (bouton **Importer**). Le téléphone et l'ordinateur ont alors les mêmes données.
+**Première fois : installer vos classes sur le téléphone**
 
-**Ensuite, à chaque fois :**
+1. Sur l'**ordinateur**, cliquez sur **Synchroniser** → **Envoyer mes classes**, cochez les classes voulues, puis **Afficher le code**.
+2. Sur le **téléphone**, cliquez sur **Synchroniser** → **Recevoir** et autorisez la caméra. Visez l'écran de l'ordinateur et gardez-le en face jusqu'à la fin de la lecture (une classe prend une dizaine de secondes : le code change tout seul).
+3. Le téléphone liste les classes reçues : cochez celles à ajouter, puis **Ajouter**.
+
+Les classes arrivent avec leurs plans et leurs salles, **sans les photos**. Pour les photos, passez par un export `.classe`.
+
+**Ensuite : reporter les modifications du téléphone sur l'ordinateur**
 
 1. Sur le **téléphone**, modifiez ce que vous voulez : places, feux tricolores, annotations, notes…
-2. Sur le téléphone, cliquez sur **Synchroniser**, puis **Envoyer**. Un code QR s'affiche ; s'il y a beaucoup de modifications, il change tout seul plusieurs fois.
-3. Sur l'**ordinateur**, cliquez sur **Synchroniser**, puis **Recevoir**, et autorisez la caméra. Présentez l'écran du téléphone et gardez-le en face jusqu'à la fin de la lecture.
-4. L'ordinateur liste les modifications reçues (« Plan 6e A — 3 place(s) modifiée(s) », « Ada Lovelace — feu tricolore »…). Décochez celles que vous ne voulez pas, puis **Appliquer**.
-5. Sur le téléphone, cliquez sur **L'ordinateur a tout reçu** : la prochaine fois, seules les nouvelles modifications seront envoyées.
+2. Toujours sur le téléphone, cliquez sur **Synchroniser** → **Envoyer mes modifications**. Un code s'affiche.
+3. Sur l'**ordinateur**, cliquez sur **Synchroniser** → **Recevoir** et présentez l'écran du téléphone à la caméra.
+4. L'ordinateur liste les modifications reçues (« Plan « 6e A » — 3 place(s) modifiée(s) », « Ada Lovelace — feu tricolore »…). Décochez celles que vous ne voulez pas, puis **Appliquer**.
+5. Sur le téléphone, cliquez sur **L'autre appareil a tout reçu** : la prochaine fois, seules les nouvelles modifications seront envoyées.
 
 À savoir :
 
-- Seules les **modifications d'élèves et de plans** voyagent. Les photos, les classes et les salles créées sur le téléphone ne sont pas transférées : passez par un export `.classe`.
-- Si un élément a été modifié plus récemment sur l'ordinateur, il n'est pas écrasé.
-- Avant d'appliquer, l'application garde une copie de ce qu'elle remplace.
+- Seules les **modifications d'élèves et de plans** se reportent. Une classe ou une salle créée sur un appareil se transmet avec « Envoyer mes classes ».
+- Une classe déjà présente sur l'appareil qui reçoit n'est jamais écrasée par « Envoyer mes classes ».
+- Si un élément a été modifié plus récemment sur l'appareil qui reçoit, il n'est pas écrasé.
+- Avant d'appliquer des modifications, l'application garde une copie de ce qu'elle remplace.
 - La vue 3D n'est pas proposée sur téléphone.
 
 ---

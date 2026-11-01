@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DATA_VERSION } from './migrations'
-import { applyChanges, buildPatch, diffPatch, parsePatch } from './sync'
+import { applyChanges, buildPatch, bundleOf, diffPatch, newcomers, parsePatch, selectBundle } from './sync'
 import { newSchoolClass, type Plan, type SchoolClass } from './types'
 
 const T1 = '2026-11-01T08:00:00.000Z'
@@ -117,5 +117,44 @@ describe('sync patches', () => {
     const patch = parsePatch(text)
     expect(patch.students).toEqual([])
     expect(patch.plans).toEqual([])
+  })
+})
+
+describe('transfer of whole classes', () => {
+  const rooms = [{ id: 'r1', name: 'Salle', width: 100, height: 100, grid: 10, furniture: [] }]
+  const other = { ...makeClass(), id: 'c2', name: 'B' }
+  const bundle = { classes: [makeClass(), other], rooms, plans: [makePlan({}, T1)] }
+
+  it('selects the chosen classes with their plans and rooms, and without photos', () => {
+    const picked = selectBundle(bundle, ['c1'])
+    expect(picked.classes.map((c) => c.id)).toEqual(['c1'])
+    expect(picked.plans.map((p) => p.id)).toEqual(['p1'])
+    expect(picked.rooms.map((r) => r.id)).toEqual(['r1'])
+    expect(picked.classes[0].students.every((s) => !('photoId' in s))).toBe(true)
+  })
+
+  it('leaves the rooms out when the chosen classes have no plan', () => {
+    const picked = selectBundle(bundle, ['c2'])
+    expect(picked.plans).toEqual([])
+    expect(picked.rooms).toEqual([])
+  })
+
+  it('finds the classes that are new on this device, and leaves existing ones alone', () => {
+    const empty = { classes: [], rooms: [], plans: [] }
+    expect(newcomers(bundle, empty).map((n) => n.schoolClass.id)).toEqual(['c1', 'c2'])
+    const known = { classes: [other], rooms, plans: [] }
+    const [only] = newcomers(bundle, known)
+    expect(only.schoolClass.id).toBe('c1')
+    expect(only.plans.map((p) => p.id)).toEqual(['p1'])
+    expect(only.rooms).toEqual([]) // this device already has the room
+  })
+
+  it('gathers accepted classes into one bundle, with shared rooms once', () => {
+    const second = { ...makePlan({}, T1), id: 'p2', classId: 'c2' }
+    const both = { ...bundle, plans: [...bundle.plans, second] }
+    const merged = bundleOf(newcomers(both, { classes: [], rooms: [], plans: [] }))
+    expect(merged.classes).toHaveLength(2)
+    expect(merged.plans).toHaveLength(2)
+    expect(merged.rooms).toHaveLength(1)
   })
 })

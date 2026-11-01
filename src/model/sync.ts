@@ -1,5 +1,5 @@
 import { DATA_VERSION } from './migrations'
-import { normalizePlan, normalizeStudent, type Plan, type SchoolClass, type Student } from './types'
+import { normalizePlan, normalizeStudent, type Plan, type Room, type SchoolClass, type Student } from './types'
 
 /** Identifies a patch among other JSON (and among the pages a QR code may point to). */
 export const PATCH_FORMAT = 'classe-patch'
@@ -165,5 +165,50 @@ export function applyChanges(
         ? { ...change.plan, classId: p.classId, roomId: p.roomId, createdAt: p.createdAt }
         : p
     }),
+  }
+}
+
+export type Bundle = { classes: SchoolClass[]; rooms: Room[]; plans: Plan[] }
+
+/**
+ * What to send to set up a new device with some classes: the classes, their plans and the rooms those
+ * use. Photos are left out, so the students lose their `photoId` rather than point at nothing.
+ */
+export function selectBundle(data: Bundle, classIds: string[]): Bundle {
+  const classes = data.classes
+    .filter((c) => classIds.includes(c.id))
+    .map((c) => ({ ...c, students: c.students.map(({ photoId: _photo, ...student }) => student) }))
+  const plans = data.plans.filter((p) => classIds.includes(p.classId))
+  const roomIds = new Set(plans.map((p) => p.roomId))
+  return { classes, plans, rooms: data.rooms.filter((r) => roomIds.has(r.id)) }
+}
+
+/** A class this device does not have yet, with its plans and the rooms they need that are missing too. */
+export type Newcomer = { schoolClass: SchoolClass; plans: Plan[]; rooms: Room[] }
+
+/**
+ * The classes of `incoming` unknown here. A class that already exists is never touched: its edits
+ * travel as a patch, which knows which side is newer.
+ */
+export function newcomers(incoming: Bundle, local: Bundle): Newcomer[] {
+  return incoming.classes
+    .filter((c) => !local.classes.some((l) => l.id === c.id))
+    .map((schoolClass) => {
+      const plans = incoming.plans.filter(
+        (p) => p.classId === schoolClass.id && !local.plans.some((l) => l.id === p.id),
+      )
+      const roomIds = new Set(plans.map((p) => p.roomId))
+      const rooms = incoming.rooms.filter((r) => roomIds.has(r.id) && !local.rooms.some((l) => l.id === r.id))
+      return { schoolClass, plans, rooms }
+    })
+}
+
+/** Gathers the accepted newcomers into one bundle; a room needed by two classes is listed once. */
+export function bundleOf(accepted: Newcomer[]): Bundle {
+  const rooms = new Map(accepted.flatMap((n) => n.rooms).map((r) => [r.id, r]))
+  return {
+    classes: accepted.map((n) => n.schoolClass),
+    plans: accepted.flatMap((n) => n.plans),
+    rooms: [...rooms.values()],
   }
 }

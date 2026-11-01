@@ -1,4 +1,5 @@
 import { DATA_VERSION, migrate } from '../model/migrations'
+import { selectBundle, type Bundle } from '../model/sync'
 import { normalizeClass, normalizePlan, normalizeRoom, type Plan, type Room, type SchoolClass } from '../model/types'
 import type { Storage } from '../storage/storage'
 
@@ -52,6 +53,21 @@ export async function buildFile(
     photos,
   }
 }
+
+/** A `.classe` structure around data that travels without photos (QR transfer). */
+export function fileOf(bundle: Bundle): ExportFile {
+  return {
+    format: FORMAT,
+    version: FILE_VERSION,
+    application: typeof __APP_VERSION__ === 'undefined' ? 'dev' : __APP_VERSION__,
+    exportedAt: new Date().toISOString(),
+    ...bundle,
+    photos: {},
+  }
+}
+
+/** The chosen classes with their plans and rooms, ready to be shown as QR codes. */
+export const buildTransfer = (data: Bundle, classIds: string[]): ExportFile => fileOf(selectBundle(data, classIds))
 
 /** Reads and validates a `.classe` file, migrating old formats. Throws a user-readable Error if invalid. */
 export function readFile(text: string): ExportFile {
