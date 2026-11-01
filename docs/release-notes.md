@@ -3,6 +3,11 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.15.1 — 2026-11-01
+
+- **Connexion directe** : l'appareil qui rejoint garde son code affiché jusqu'à ce que le premier appareil l'ait lu.
+  Avant, il le cachait trop tôt et la connexion restait bloquée sur « Connexion en cours… ».
+
 ## 0.15.0 — 2026-11-01
 
 - **Connexion directe entre deux appareils** : « Synchroniser » → « Connexion directe ». Les deux appareils, sur le même

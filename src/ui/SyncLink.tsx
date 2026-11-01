@@ -112,7 +112,8 @@ function LinkSetup({
             : 'Visez le code affiché par le premier appareil (Synchroniser → Connexion directe → Commencer).'}
         </p>
       )}
-      {card && !connecting && (
+      {/* The joiner's code must stay up until the first device has read it: connecting only starts once it did. */}
+      {card && (role === 'join' || !connecting) && (
         <div className="qr-box">
           <QrSvg text={card} label="Code de connexion" />
         </div>
