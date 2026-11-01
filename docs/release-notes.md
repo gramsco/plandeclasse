@@ -5,14 +5,15 @@ sauvegarde avant de mettre à jour.
 
 ## 0.14.0 — 2026-11-01
 
-- (à rédiger)
+- **Installer vos classes sur un autre appareil** : « Synchroniser » → « Envoyer mes classes » affiche vos classes, avec
+  leurs plans et leurs salles, sous forme de codes QR ; l'autre appareil les lit avec sa caméra et ajoute celles qu'il
+  n'a pas encore. Une classe déjà présente n'est jamais écrasée. Les photos ne sont pas transférées.
 
 ## 0.13.0 — 2026-11-01
 
-- **Passer d'un appareil à l'autre avec des codes QR** : le bouton « Synchroniser » installe vos classes sur votre
-  téléphone (un appareil affiche des codes, l'autre les lit avec sa caméra), puis reporte sur l'ordinateur les
-  modifications faites sur le téléphone (places, feux tricolores, annotations, notes…). Vous choisissez quelles
-  modifications appliquer. Rien ne passe par Internet. Les photos ne sont pas transférées.
+- **Modifier sur son téléphone, puis reporter sur l'ordinateur** : le bouton « Synchroniser » affiche vos modifications
+  (places, feux tricolores, annotations, notes…) sous forme de code QR sur le téléphone, et l'ordinateur les lit avec sa
+  caméra. Vous choisissez quelles modifications appliquer. Rien ne passe par Internet.
 - **Sur téléphone, la vue 3D n'est plus proposée** : elle est lourde et peu pratique sur un petit écran.
 
 ## 0.12.0 — 2026-11-01
