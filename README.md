@@ -5,6 +5,13 @@ Application web pour préparer des plans de classe : élèves avec photos, salle
 - **Utiliser** : https://gramsco.github.io/plandeclasse/
 - **Guide d'utilisation** (installation, sécurité des données…) : [docs/guide.md](docs/guide.md)
 
+![Un plan de classe placé](docs/img/04-plan-place.png)
+
+<p>
+  <img src="docs/img/05-classes.png" alt="Fiches des élèves" width="49%">
+  <img src="docs/img/07-regles-alertes.png" alt="Alertes et règles de proximité" width="49%">
+</p>
+
 ## Sécurité
 
 Voir [SECURITY.md](SECURITY.md) : signalement d'une faille et contrôles automatisés (Dependabot, Trivy, CodeQL, Scorecard).
