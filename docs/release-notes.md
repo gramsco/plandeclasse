@@ -3,6 +3,13 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.12.0 — 2026-11-01
+
+- **Se promener dans la classe en 3D** : un nouveau point de vue, depuis le bureau du prof, où l'on marche avec les
+  touches Z Q S D (ou W A S D, ou les flèches ; Maj pour courir) et où l'on glisse pour regarder autour de soi. Les
+  tables bloquent le passage : on suit les allées.
+- **Voir depuis la place d'un élève en un clic** : cliquez directement sur un élève, dans n'importe quelle vue 3D.
+
 ## 0.11.0 — 2026-11-01
 
 - **Vue 3D de la classe** : le bouton « Vue 3D » du plan montre la salle en trois dimensions, avec chaque élève sous forme de pion,

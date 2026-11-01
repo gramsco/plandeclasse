@@ -3,6 +3,7 @@ import { randomLights } from './demo'
 import { footprint, seatBack, roomSeats, seatCenter, snap } from './geometry'
 import { relation } from './analysis'
 import { assign, fillRandomly, lookoutSeats, purgeAssignments, purgeRules, transposeAssignments } from './plan'
+import { stepInRoom } from './walk'
 import { createFurniture, createFurnitureIn, findRoomTemplate, isWallItem, ROOM_TEMPLATES } from './rooms'
 import { newSchoolClass, normalizePlan, normalizeStudent, type Plan, type Student } from './types'
 
@@ -53,6 +54,38 @@ describe('lookoutSeats', () => {
     const list = lookoutSeats(room, plan, schoolClass)
     expect(list.map((s) => s.id)).toEqual([seats[1].seatId, seats[4].seatId])
     expect(list[0].label).toBe(`${second.firstName} ${second.lastName}`.trim())
+  })
+})
+
+describe('walking in the room', () => {
+  const empty = { ...ROOM_TEMPLATES[0].create(), furniture: [] }
+  const table = createFurniture('single', 400, 300) // 100 x 92, footprint x 400-500, y 300-392
+  const room = { ...empty, furniture: [table] }
+
+  it('moves freely in the open and stops at the walls', () => {
+    expect(stepInRoom(empty, { x: 100, y: 100 }, { x: 140, y: 120 })).toEqual({ x: 140, y: 120 })
+    expect(stepInRoom(empty, { x: 100, y: 100 }, { x: -50, y: 120 })).toEqual({ x: 100, y: 120 })
+    expect(stepInRoom(empty, { x: 100, y: 100 }, { x: 100, y: empty.height + 50 })).toEqual({ x: 100, y: 100 })
+  })
+
+  it('does not go through a table', () => {
+    expect(stepInRoom(room, { x: 350, y: 346 }, { x: 420, y: 346 })).toEqual({ x: 350, y: 346 })
+  })
+
+  it('slides along a table when walking into it at an angle', () => {
+    const next = stepInRoom(room, { x: 350, y: 346 }, { x: 420, y: 250 })
+    expect(next.x).toBe(350) // blocked sideways
+    expect(next.y).toBe(250) // free upwards
+  })
+
+  it('lets someone who starts inside a table walk out of it', () => {
+    const start = { x: 450, y: 346 }
+    expect(stepInRoom(room, start, { x: 450, y: 600 }).y).toBe(600)
+  })
+
+  it('walks through wall items: doors, windows and boards are not obstacles', () => {
+    const withDoor = { ...empty, furniture: [createFurniture('door', 200, 100)] }
+    expect(stepInRoom(withDoor, { x: 240, y: 200 }, { x: 240, y: 120 })).toEqual({ x: 240, y: 120 })
   })
 })
 

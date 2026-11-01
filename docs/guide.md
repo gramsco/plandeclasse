@@ -182,7 +182,8 @@ Les personnes déjà placées ne bougent pas.
 Le bouton **Vue 3D** (menu de gauche du plan) montre la classe en trois dimensions : chaque élève est représenté à sa place par un pion de la couleur de son feu, avec sa photo et son nom au-dessus. Le tableau porte un exemple de texte écrit à la main, le même sur le tableau noir et sur le tableau blanc.
 
 - **Vue du bureau** : vous êtes au bureau du prof et vous regardez la classe. Glissez pour regarder autour de vous.
-- **Vue élève** : choisissez un élève dans la liste « Place de » et regardez la classe depuis sa place, tournée vers le tableau. Pratique pour vérifier qui voit mal le tableau ou qui est caché derrière un autre. Glissez pour regarder autour de vous. Dans l'aperçu 3D d'une salle, la liste propose les places numérotées.
+- **Se promener** : vous marchez dans la classe, depuis le bureau du prof. **Z Q S D** (ou **W A S D**, ou les **flèches**) pour avancer, reculer et vous décaler, **Maj** pour courir, et **glissez** pour regarder autour de vous. Les tables bloquent le passage : suivez les allées.
+- **Vue élève** : choisissez un élève dans la liste « Place de » et regardez la classe depuis sa place, tournée vers le tableau. Pratique pour vérifier qui voit mal le tableau ou qui est caché derrière un autre. Vous pouvez aussi **cliquer directement sur un élève**, dans n'importe quelle vue, pour voir depuis sa place. Glissez pour regarder autour de vous. Dans l'aperçu 3D d'une salle, la liste propose les places numérotées.
 - **Vue libre** : tournez autour de la salle (glisser), zoomez (molette) et déplacez-vous (clic droit).
 - **Plein écran** : pour projeter la vue ou la regarder en grand ; Échap pour en sortir.
 

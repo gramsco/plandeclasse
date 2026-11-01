@@ -14,10 +14,12 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   PlaneGeometry,
+  Raycaster,
   Scene,
   SphereGeometry,
   Sprite,
   SpriteMaterial,
+  Vector2,
   Vector3,
   WebGLRenderer,
   type BufferGeometry,
@@ -27,6 +29,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { footprint, seatCenter, seatMarkCenter, type Rect } from '../model/geometry'
 import { lookoutSeats } from '../model/plan'
+import { stepInRoom } from '../model/walk'
 import { isBoard, isWallItem } from '../model/rooms'
 import {
   fullName,
@@ -51,9 +54,24 @@ const EYE_HEIGHT = 1.6
 /** Eye height of a seated student. */
 const STUDENT_EYE_HEIGHT = 1.15
 
-type ViewMode = 'desk' | 'free' | 'student'
+const WALK_SPEED = 2.2 // metres per second
+const RUN_SPEED = 4.5
+/** Layout-agnostic: Z Q S D on an AZERTY keyboard, W A S D on a QWERTY one, and the arrows. */
+const WALK_KEYS = {
+  forward: ['arrowup', 'z', 'w'],
+  back: ['arrowdown', 's'],
+  left: ['arrowleft', 'q', 'a'],
+  right: ['arrowright', 'd'],
+}
+
+type ViewMode = 'desk' | 'walk' | 'student' | 'free'
 const VIEW_MODES: { mode: ViewMode; label: string; hint: string }[] = [
   { mode: 'desk', label: 'Vue du bureau', hint: 'Glissez pour regarder autour de vous depuis le bureau du prof.' },
+  {
+    mode: 'walk',
+    label: 'Se promener',
+    hint: 'Marchez avec Z Q S D ou les flèches (Maj pour courir) en contournant les tables. Glissez pour regarder autour de vous.',
+  },
   {
     mode: 'student',
     label: 'Vue élève',
@@ -101,6 +119,14 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
   const seatId = seats.some((seat) => seat.id === seatChoice) ? seatChoice : (seats[0]?.id ?? '')
   // No seat to look from (everyone was removed): back to the desk view, so the buttons match the camera.
   const mode = chosenMode === 'student' && seats.length === 0 ? 'desk' : chosenMode
+  // Clicking a student in the scene looks from their seat. The scene calls this without being rebuilt.
+  const pickSeat = useRef<(id: string) => void>(undefined)
+  useEffect(() => {
+    pickSeat.current = (id) => {
+      setSeatChoice(id)
+      setMode('student')
+    }
+  })
   const currentView = useRef({ mode, seatId })
   useEffect(() => {
     currentView.current = { mode, seatId }
@@ -140,8 +166,11 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
     if (forward.lengthSq() < 0.01) forward.set(0, 0, 1)
     forward.normalize()
 
+    const pressed = new Set<string>()
+
     // What each seat sees, and what to hide when looking from it (its own pawn and card would block the view).
     const seatViews = new Map<string, { eye: Vector3; forward: Vector3; hide: Object3D[] }>()
+    const pickables: Object3D[] = []
     const lookAround = (from: Vector3, direction: Vector3) => {
       camera.position.copy(from)
       controls.target.copy(from).addScaledVector(direction, 0.01)
@@ -155,10 +184,11 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
       const view = next === 'student' ? seatViews.get(seat) : undefined
       const shown = next === 'student' && !view ? 'desk' : next
       for (const v of seatViews.values()) v.hide.forEach((o) => (o.visible = true))
+      pressed.clear()
       if (view) {
         view.hide.forEach((o) => (o.visible = false))
         lookAround(view.eye, view.forward)
-      } else if (shown === 'desk') {
+      } else if (shown === 'desk' || shown === 'walk') {
         lookAround(eye, forward)
       } else {
         camera.position.set(width / 2, Math.max(width, depth) * 0.6, depth * 1.05)
@@ -237,19 +267,22 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
         const student = students.get(plan?.assignments[seat.id] ?? '')
         if (student) {
           // A plain pawn in the traffic-light colour, with the avatar floating above it.
-          hide.push(
-            add(
-              geometry('pawn', () => new CylinderGeometry(0.1, 0.22, PAWN_HEIGHT, 20)),
-              shirt(student.light),
-              position.x,
-              base + PAWN_HEIGHT / 2,
-              position.z,
-            ),
+          const pawn = add(
+            geometry('pawn', () => new CylinderGeometry(0.1, 0.22, PAWN_HEIGHT, 20)),
+            shirt(student.light),
+            position.x,
+            base + PAWN_HEIGHT / 2,
+            position.z,
           )
+          pawn.userData.seatId = seat.id
+          hide.push(pawn)
+          pickables.push(pawn)
           const card = studentCard(student, photoOf.get(student.id), track, () => alive)
           card.position.set(position.x, base + PAWN_HEIGHT + 0.3, position.z)
+          card.userData.seatId = seat.id
           scene.add(card)
           hide.push(card)
+          pickables.push(card)
         }
 
         // Students look at the board, or at the teacher's desk when there is none.
@@ -267,13 +300,92 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
 
     applyMode.current(currentView.current.mode, currentView.current.seatId)
 
+    // Clicking (without dragging) a student looks from their seat.
+    const raycaster = new Raycaster()
+    const pointer = new Vector2()
+    const hit = (e: PointerEvent) => {
+      const bounds = renderer.domElement.getBoundingClientRect()
+      pointer.set(
+        ((e.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((e.clientY - bounds.top) / bounds.height) * 2 + 1,
+      )
+      raycaster.setFromCamera(pointer, camera)
+      const visible = pickables.filter((o) => o.visible)
+      return raycaster.intersectObjects(visible, false)[0]?.object.userData.seatId as string | undefined
+    }
+    let down: { x: number; y: number } | undefined
+    const onDown = (e: PointerEvent) => (down = { x: e.clientX, y: e.clientY })
+    const onUp = (e: PointerEvent) => {
+      const moved = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5
+      down = undefined
+      const picked = !moved && e.button === 0 ? hit(e) : undefined
+      if (picked) pickSeat.current?.(picked)
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!down) renderer.domElement.style.cursor = hit(e) ? 'pointer' : ''
+    }
+    renderer.domElement.addEventListener('pointerdown', onDown)
+    renderer.domElement.addEventListener('pointerup', onUp)
+    renderer.domElement.addEventListener('pointermove', onMove)
+
+    // Walking: the keys move the camera and its look-around target together, along the way one is looking.
+    const walkKey = (e: KeyboardEvent) => {
+      if (currentView.current.mode !== 'walk' || e.ctrlKey || e.metaKey || e.altKey) return
+      if ((e.target as HTMLElement).closest('input, textarea, select')) return
+      const key = e.key.toLowerCase()
+      if (key === 'shift') {
+        if (e.type === 'keydown') pressed.add(key)
+        else pressed.delete(key)
+        return
+      }
+      if (!Object.values(WALK_KEYS).some((keys) => keys.includes(key))) return
+      e.preventDefault() // the arrows would scroll the page
+      if (e.type === 'keydown') pressed.add(key)
+      else pressed.delete(key)
+    }
+    const stopWalking = () => pressed.clear()
+    window.addEventListener('keydown', walkKey)
+    window.addEventListener('keyup', walkKey)
+    window.addEventListener('blur', stopWalking)
+
+    const ahead = new Vector3()
+    const side = new Vector3()
+    const walk = (seconds: number, run: boolean) => {
+      const axis = (keys: string[]) => (keys.some((k) => pressed.has(k)) ? 1 : 0)
+      const forwardInput = axis(WALK_KEYS.forward) - axis(WALK_KEYS.back)
+      const sideInput = axis(WALK_KEYS.right) - axis(WALK_KEYS.left)
+      if (!forwardInput && !sideInput) return
+      camera.getWorldDirection(ahead)
+      ahead.y = 0
+      if (ahead.lengthSq() < 1e-6) return
+      ahead.normalize()
+      side.set(-ahead.z, 0, ahead.x)
+      const distance = (run ? RUN_SPEED : WALK_SPEED) * seconds
+      const wanted = camera.position
+        .clone()
+        .addScaledVector(ahead, forwardInput * distance)
+        .addScaledVector(side, sideInput * distance)
+      const next = stepInRoom(
+        room,
+        { x: camera.position.x / SCALE, y: camera.position.z / SCALE },
+        { x: wanted.x / SCALE, y: wanted.z / SCALE },
+      )
+      const move = new Vector3(next.x * SCALE - camera.position.x, 0, next.y * SCALE - camera.position.z)
+      camera.position.add(move)
+      controls.target.add(move)
+    }
+
     let frame = 0
-    const loop = () => {
+    let last = performance.now()
+    const loop = (now: number) => {
       frame = requestAnimationFrame(loop)
+      const seconds = Math.min((now - last) / 1000, 0.05)
+      last = now
+      if (currentView.current.mode === 'walk') walk(seconds, pressed.has('shift'))
       controls.update()
       renderer.render(scene, camera)
     }
-    loop()
+    frame = requestAnimationFrame(loop)
 
     const onResize = () => {
       renderer.setSize(element.clientWidth, element.clientHeight)
@@ -288,6 +400,12 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
       alive = false
       applyMode.current = undefined
       cancelAnimationFrame(frame)
+      window.removeEventListener('keydown', walkKey)
+      window.removeEventListener('keyup', walkKey)
+      window.removeEventListener('blur', stopWalking)
+      renderer.domElement.removeEventListener('pointerdown', onDown)
+      renderer.domElement.removeEventListener('pointerup', onUp)
+      renderer.domElement.removeEventListener('pointermove', onMove)
       observer.disconnect()
       controls.dispose()
       disposables.forEach((d) => d.dispose())
@@ -331,7 +449,10 @@ export default function Scene3D({ room, plan, schoolClass, photoUrls = {} }: Pro
         </button>
       </div>
       <div ref={host} className="scene3d-host" />
-      <p className="hint">{VIEW_MODES.find((v) => v.mode === mode)?.hint}</p>
+      <p className="hint">
+        {VIEW_MODES.find((v) => v.mode === mode)?.hint}
+        {seats.length > 0 && ' Cliquez un élève pour voir depuis sa place.'}
+      </p>
     </div>
   )
 }
