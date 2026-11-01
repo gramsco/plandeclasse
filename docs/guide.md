@@ -259,9 +259,9 @@ L'export sert à **sauvegarder** (les navigateurs peuvent perdre les données, v
 Les anciens fichiers restent lisibles : ils sont convertis à l'import. Un fichier créé par une version *plus récente* de l'application est refusé avec un message qui explique pourquoi.
 
 
-### Passer d'un appareil à l'autre avec des codes QR (téléphone ↔ ordinateur)
+### Passer d'un appareil à l'autre (téléphone ↔ ordinateur)
 
-Vous pouvez installer vos classes sur votre téléphone, les ajuster sans connexion, puis reporter ces modifications sur l'ordinateur, **avec des codes QR**. Rien ne passe par Internet : un appareil affiche des codes, l'autre les lit avec sa caméra. Le bouton **Synchroniser** (à côté de Exporter et Importer) fonctionne dans les deux sens.
+Vous pouvez installer vos classes sur votre téléphone, les ajuster sans connexion, puis reporter ces modifications sur l'ordinateur, **avec des codes QR** ou par une **connexion directe**. Rien ne passe par Internet ni par un serveur : un appareil affiche des codes, l'autre les lit avec sa caméra. Le bouton **Synchroniser** (à côté de Exporter et Importer) fonctionne dans les deux sens.
 
 **Première fois : installer vos classes sur le téléphone**
 
@@ -286,6 +286,19 @@ Les classes arrivent avec leurs plans et leurs salles, **sans les photos**. Pour
 - Si un élément a été modifié plus récemment sur l'appareil qui reçoit, il n'est pas écrasé.
 - Avant d'appliquer des modifications, l'application garde une copie de ce qu'elle remplace.
 - La vue 3D n'est pas proposée sur téléphone.
+
+**Sans refaire de code à chaque fois : la connexion directe**
+
+Si les deux appareils sont sur le **même réseau Wi-Fi** (ou si l'un utilise le partage de connexion de l'autre), vous pouvez les relier une fois, puis échanger autant que vous voulez.
+
+1. Sur le premier appareil, cliquez sur **Synchroniser** → **Connexion directe** → **Commencer** et autorisez la caméra. Un code s'affiche.
+2. Sur le second, **Synchroniser** → **Connexion directe** → **Rejoindre**, et visez ce code. Le second affiche alors son propre code.
+3. Présentez-le à la caméra du premier. Les deux appareils indiquent « Connecté ».
+4. Chacun peut alors **Envoyer mes classes** ou **Envoyer mes modifications**. Ce que l'autre vous envoie s'affiche, et vous cochez ce qu'il faut appliquer, exactement comme avec les codes QR.
+
+Les codes ne servent qu'à présenter les appareils l'un à l'autre. Ensuite, les données passent **directement de l'un à l'autre, sur votre réseau local**, chiffrées, sans serveur, sans compte et sans Internet. La connexion s'arrête quand vous fermez la fenêtre.
+
+Si les appareils n'arrivent pas à se connecter : vérifiez qu'ils sont sur le même réseau. Certains réseaux (écoles, lieux publics) empêchent les appareils de se voir : essayez avec le partage de connexion d'un téléphone, ou revenez aux codes QR de « Envoyer ».
 
 ---
 
@@ -316,7 +329,7 @@ Soyons clairs sur les limites :
 - **Les données ne sont pas chiffrées** par l'application. Toute personne qui a accès à votre session d'ordinateur *ouverte* peut ouvrir l'application et voir les élèves. Verrouillez votre session quand vous vous absentez, et activez le **chiffrement du disque** (FileVault sur Mac, BitLocker sur Windows) si l'ordinateur peut être perdu ou volé.
 - **Pas de mot de passe** pour ouvrir l'application ou les fichiers `.classe`.
 - **Les fichiers `.classe` sont lisibles en clair**, photos comprises. Traitez-les comme des dossiers d'élèves : ne les envoyez pas par e-mail non sécurisé, ne les laissez pas traîner dans un dossier partagé, supprimez les copies inutiles.
-- **Pas de synchronisation** entre appareils : c'est volontaire (rien ne quitte l'appareil), mais cela veut dire que l'export est votre seule sauvegarde.
+- **Pas de synchronisation automatique** entre appareils : les échanges (codes QR ou connexion directe) sont toujours lancés par vous, et rien ne quitte vos appareils. Cela veut dire que l'export est votre seule sauvegarde.
 
 ### Risques de perte de données
 

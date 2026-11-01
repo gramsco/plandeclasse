@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { buildTransfer } from '../io/file'
 import { encodePayload } from '../io/payloadCodec'
 import { splitFrames } from '../model/frames'
@@ -9,6 +9,11 @@ import { getLastSync, setLastSync } from './lastSync'
 import { QrSvg } from './QrSvg'
 
 const FRAME_MS = 900
+
+type Outcome = { kind: 'sent' } | { kind: 'failed'; message: string }
+
+/** Where a transfer goes when it does not go through QR codes: resolves once the other device confirmed it has everything. */
+export type Delivery = { send(value: unknown): Promise<void> }
 
 const toFrames = async (value: unknown) => splitFrames(await encodePayload(value), newId().slice(0, 6))
 
@@ -53,24 +58,67 @@ function QrLoop({
   )
 }
 
+function Sent({ onDone }: { onDone(): void }) {
+  return (
+    <>
+      <p role="status">Envoyé : l'autre appareil a tout reçu.</p>
+      <div className="form-actions">
+        <button className="primary" autoFocus onClick={onDone}>
+          OK
+        </button>
+      </div>
+    </>
+  )
+}
+
+function SendFailed({ message, onDone }: { message: string; onDone(): void }) {
+  return (
+    <>
+      <p role="alert">{message}</p>
+      <div className="form-actions">
+        <button className="primary" autoFocus onClick={onDone}>
+          OK
+        </button>
+      </div>
+    </>
+  )
+}
+
 const INTRO = "Sur l'autre appareil : Synchroniser → Recevoir, puis visez ce code avec la caméra."
 
 /** The edits made since the last sync. */
-export function SyncSendChanges({ onDone }: { onDone(): void }) {
+export function SyncSendChanges({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
   const { classes, plans } = useApp()
   const [since] = useState(getLastSync)
   const [now] = useState(() => new Date().toISOString())
   const [frames, setFrames] = useState<string[]>()
+  const [outcome, setOutcome] = useState<Outcome>()
+  const started = useRef(false)
 
   useEffect(() => {
     const patch = buildPatch(classes, plans, since, now)
     if (patch.students.length + patch.plans.length === 0) return setFrames([])
+    if (delivery) {
+      // Sending is not repeatable: the effect runs twice in development.
+      if (started.current) return
+      started.current = true
+      delivery.send(patch).then(
+        () => {
+          setLastSync(now)
+          setOutcome({ kind: 'sent' })
+        },
+        (e: Error) => setOutcome({ kind: 'failed', message: e.message }),
+      )
+      return
+    }
     void toFrames(patch).then(setFrames)
     // The patch is frozen when the panel opens: edits made while it shows must not change the frames.
     // oxlint-disable-next-line react/exhaustive-deps
   }, [])
 
-  if (!frames) return <p className="hint">Préparation…</p>
+  if (outcome?.kind === 'sent') return <Sent onDone={onDone} />
+  if (outcome) return <SendFailed message={outcome.message} onDone={onDone} />
+  if (!frames) return <p className="hint">{delivery ? 'Envoi…' : 'Préparation…'}</p>
   if (frames.length === 0)
     return (
       <>
@@ -97,12 +145,15 @@ export function SyncSendChanges({ onDone }: { onDone(): void }) {
 }
 
 /** Whole classes with their plans and rooms, to set up another device. Photos do not travel. */
-export function SyncSendClasses({ onDone }: { onDone(): void }) {
+export function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
   const { classes, rooms, plans } = useApp()
   const [chosen, setChosen] = useState(() => new Set(classes.map((c) => c.id)))
   const [frames, setFrames] = useState<string[]>()
   const [busy, setBusy] = useState(false)
+  const [outcome, setOutcome] = useState<Outcome>()
 
+  if (outcome?.kind === 'sent') return <Sent onDone={onDone} />
+  if (outcome) return <SendFailed message={outcome.message} onDone={onDone} />
   if (frames)
     return (
       <QrLoop
@@ -155,10 +206,16 @@ export function SyncSendClasses({ onDone }: { onDone(): void }) {
           disabled={chosen.size === 0 || busy}
           onClick={() => {
             setBusy(true)
-            void toFrames(buildTransfer({ classes, rooms, plans }, [...chosen])).then(setFrames)
+            const transfer = buildTransfer({ classes, rooms, plans }, [...chosen])
+            if (delivery)
+              delivery.send(transfer).then(
+                () => setOutcome({ kind: 'sent' }),
+                (e: Error) => setOutcome({ kind: 'failed', message: e.message }),
+              )
+            else void toFrames(transfer).then(setFrames)
           }}
         >
-          Afficher le code
+          {delivery ? 'Envoyer' : 'Afficher le code'}
         </button>
       </div>
     </>

@@ -2,7 +2,7 @@
 
 Plan de classe is a **local-first PWA** that teachers use to place students in a classroom. Student names, photos and
 annotations (PAP, PAI, DYS…) are personal data of minors, some of it sensitive. Everything below follows from one
-rule: **the data never leaves the user's device, and the user must never lose it.**
+rule: **the data never leaves the user's own devices, and the user must never lose it.**
 
 Product specifications live in [`intent.md`](intent.md) and [`v2.md`](v2.md) (in French, they are the product owner's
 words). Architecture is described in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The user guide is
@@ -50,8 +50,12 @@ The gate must pass before every commit. Never weaken a rule or a test to make it
   Business rules live in `src/model` and are unit-tested; components render and dispatch.
 - **No `any`** (the few normalizers that read untrusted data are explicitly annotated). Prefer discriminated unions over
   flags. Make impossible states unrepresentable.
-- **No network, ever.** No `fetch`, no external script, font, image or CDN, no analytics, no telemetry. The CSP in
-  `index.html` enforces it and must not be loosened. A feature that seems to need the network is the wrong feature.
+- **No third party, ever.** No `fetch`, no external script, font, image or CDN, no analytics, no telemetry. The CSP in
+  `index.html` enforces it and must not be loosened. A feature that seems to need a server is the wrong feature. The
+  one network use is the direct connection between two of the teacher's own devices (`src/io/peerLink.ts`, WebRTC):
+  peer to peer on the local network, introduced by QR codes, with **no ICE server** (no STUN, no TURN), so no third party
+  ever sees an address. The CSP does not cover WebRTC, so nothing but code review and `src/io/peerLink.test.ts` guards
+  this: never add a signalling server or an ICE server.
 - **Dependencies**: every new runtime dependency needs a justification in the PR. Prefer 30 lines of code to a package.
   Install scripts are disabled (`.npmrc`), keep it that way.
 - **Comments explain _why_**, never what the code says. Delete dead code instead of commenting it out.

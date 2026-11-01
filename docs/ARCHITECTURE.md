@@ -20,7 +20,7 @@ src/
              analysis (rules, AESH, proximity), data migrations, demo data
   storage/   Storage interface + IndexedDB and in-memory implementations, photo resizing, fake avatars
   store/     Zustand store: state, actions, debounced persistence, import
-  io/        .classe file: build, read (validate + migrate), download
+  io/        .classe file: build, read (validate + migrate), download; peerLink (direct WebRTC channel, no server)
   ui/        React components, stylesheet (design tokens in `:root`), built-in guide renderer; icons come from `lucide-react`, re-exported by `ui/icons.tsx`
 scripts/     icons, screenshots, language check, Claude Code / git hooks
 docs/        user guide (French) and its screenshots, this file

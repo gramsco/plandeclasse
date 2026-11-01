@@ -8,8 +8,10 @@
 const PREFIX = 'CLP1'
 /** Small enough for a low-density QR code that a webcam reads easily. */
 export const FRAME_SIZE = 400
+/** Over a direct connection there is no QR code to fit: frames only need to stay well under the channel's message limit. */
+export const LINK_FRAME_SIZE = 16_000
 /** Bounds what an untrusted frame can make us allocate. */
-const MAX_FRAMES = 200
+export const MAX_FRAMES = 200
 
 export function splitFrames(payload: string, transferId: string, size = FRAME_SIZE): string[] {
   const total = Math.max(1, Math.ceil(payload.length / size))
@@ -56,3 +58,15 @@ export function receiveFrame(state: Reception, text: string): Reception {
   if (Object.keys(chunks).length < total) return { status: 'receiving', transferId, total, chunks }
   return { status: 'complete', payload: Array.from({ length: total }, (_, i) => chunks[i]).join('') }
 }
+
+/** The id of the transfer a frame belongs to, if the text is a frame. */
+export const transferIdOf = (text: string) => (text.startsWith(`${PREFIX}.`) ? text.split('.')[1] : undefined)
+
+const ACK_PREFIX = 'CLA1'
+
+/** What the receiver sends back once every frame of a transfer has arrived. */
+export const ackFor = (transferId: string) => `${ACK_PREFIX}.${transferId}`
+
+/** The transfer id an acknowledgement refers to, if the text is one. */
+export const ackedId = (text: string) =>
+  text.startsWith(`${ACK_PREFIX}.`) ? text.slice(ACK_PREFIX.length + 1) : undefined

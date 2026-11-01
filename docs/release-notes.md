@@ -3,6 +3,14 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.15.0 — 2026-11-01
+
+- **Connexion directe entre deux appareils** : « Synchroniser » → « Connexion directe ». Les deux appareils, sur le même
+  Wi-Fi, s'échangent deux codes QR pour se reconnaître, puis envoient classes et modifications directement de l'un à
+  l'autre, sans serveur ni Internet, autant de fois que vous voulez. Vous choisissez toujours ce qu'il faut appliquer.
+  Nouveauté testée avec Chrome sur ordinateur : si un appareil n'arrive pas à se connecter, les codes QR de « Envoyer »
+  restent disponibles.
+
 ## 0.14.1 — 2026-11-01
 
 - **Plan lisible sur téléphone** : sur un petit écran, le menu de gauche passe au-dessus du plan au lieu de lui prendre

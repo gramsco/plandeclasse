@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { emptyReception, progressOf, receiveFrame, splitFrames, type Reception } from './frames'
+import {
+  ackedId,
+  ackFor,
+  emptyReception,
+  progressOf,
+  receiveFrame,
+  splitFrames,
+  transferIdOf,
+  type Reception,
+} from './frames'
 
 const scanAll = (frames: string[]) => frames.reduce<Reception>(receiveFrame, emptyReception)
 
@@ -44,5 +53,16 @@ describe('QR frames', () => {
 
   it('keeps dots that belong to the chunk', () => {
     expect(scanAll(['CLP1.t.0.1.a.b.c'])).toEqual({ status: 'complete', payload: 'a.b.c' })
+  })
+
+  it('names the transfer a frame belongs to', () => {
+    expect(transferIdOf(splitFrames(payload, 'abc123', 100)[1])).toBe('abc123')
+    expect(transferIdOf('https://example.org')).toBeUndefined()
+  })
+
+  it('acknowledges a transfer by its id, and only that', () => {
+    expect(ackedId(ackFor('abc123'))).toBe('abc123')
+    expect(ackedId(splitFrames(payload, 'abc123', 100)[0])).toBeUndefined()
+    expect(receiveFrame(emptyReception, ackFor('abc123'))).toEqual(emptyReception)
   })
 })
