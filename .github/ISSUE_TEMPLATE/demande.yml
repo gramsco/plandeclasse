@@ -1,0 +1,30 @@
+name: Demande ou anomalie
+description: Proposer une amélioration ou signaler un problème
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ne mettez **jamais** de vrais noms d'élèves, de photos ou d'annotations : cette page est publique.
+  - type: textarea
+    id: need
+    attributes:
+      label: Ce que vous voulez faire
+      description: Dans quelle situation, et qu'est-ce qui vous gêne aujourd'hui ?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ce que vous attendez
+    validations:
+      required: false
+  - type: dropdown
+    id: data
+    attributes:
+      label: Cela change-t-il ce qui est enregistré (classes, élèves, plans) ?
+      options:
+        - Je ne sais pas
+        - Non
+        - Oui
+    validations:
+      required: true
