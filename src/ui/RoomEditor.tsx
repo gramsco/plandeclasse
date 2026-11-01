@@ -225,7 +225,7 @@ export function RoomEditor({ room }: { room: Room }) {
         </p>
       </aside>
       <div className="canvas-area">
-        <div className="canvas-tabs no-print" role="group" aria-label="Affichage de la salle">
+        <div className="canvas-tabs desktop-only no-print" role="group" aria-label="Affichage de la salle">
           <button aria-pressed={!preview3d} onClick={() => setPreview3d(false)}>
             Plan 2D
           </button>

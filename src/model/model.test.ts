@@ -198,6 +198,7 @@ describe('plan', () => {
     status: 'draft',
     notes: '',
     createdAt: '',
+    updatedAt: '',
   }
   const [seat1, seat2] = roomSeats(room).map((s) => s.seatId)
   const [student1, student2] = schoolClass.students.map((s) => s.id)
@@ -285,6 +286,7 @@ describe('placing students with a strategy', () => {
     status: 'draft',
     notes: '',
     createdAt: '',
+    updatedAt: '',
   })
   const sideNeighbours = (assignments: Record<string, string>, students: Student[]) => {
     const byId = new Map(students.map((s) => [s.id, s]))

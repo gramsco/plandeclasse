@@ -11,8 +11,12 @@
  *  6: rules of type `together` (older releases would silently drop them)
  *  7: free-text `note` on students
  *  8: furniture of type `door`, `window`, `board` and `whiteboard` (older releases would take them for tables)
+ *  9: `updatedAt` on students and plans, to merge edits made on another device
  */
-export const DATA_VERSION = 8
+export const DATA_VERSION = 9
+
+// Duplicated from `types.ts` on purpose: a migration must keep working if the model changes.
+const EPOCH = '1970-01-01T00:00:00.000Z'
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -161,6 +165,16 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
 
   // Nothing to convert: the new furniture types only appear in rooms edited from now on.
   7: (d) => d,
+
+  // Epoch rather than "now": every device migrates at a different moment, and a real edit must always win over it.
+  8: (d) => ({
+    classes: (d.classes as any[]).map((c) => ({
+      ...c,
+      students: (c.students ?? []).map((s: any) => ({ ...s, updatedAt: EPOCH })),
+    })),
+    rooms: d.rooms,
+    plans: (d.plans as any[]).map((p) => ({ ...p, updatedAt: EPOCH })),
+  }),
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

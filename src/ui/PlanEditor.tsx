@@ -280,7 +280,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                     )}
                   </>
                 )}
-                <button onClick={() => setView3d(true)}>
+                <button className="desktop-only" onClick={() => setView3d(true)}>
                   <Box size={ICON} /> Vue 3D
                 </button>
                 <button className="primary" onClick={() => setPrintOpen(true)}>

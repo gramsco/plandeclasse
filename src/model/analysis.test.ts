@@ -37,6 +37,7 @@ describe('analyze', () => {
     status: 'draft',
     notes: '',
     createdAt: '',
+    updatedAt: '',
   })
 
   it('"separate" rule: error when side by side', () => {

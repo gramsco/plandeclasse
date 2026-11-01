@@ -11,6 +11,7 @@ export {
   PanelLeftClose,
   PanelLeftOpen,
   Printer,
+  RefreshCw,
   RotateCw,
   TriangleAlert,
   Upload,

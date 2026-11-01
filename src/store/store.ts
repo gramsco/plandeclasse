@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { base64ToBlob, type ExportFile } from '../io/file'
 import { demoClass, shuffleLights } from '../model/demo'
 import { moveItem, sortByIds } from '../model/order'
+import { stampChangedStudents } from '../model/stamp'
+import { applyChanges, type Change } from '../model/sync'
 import { footprint, snap } from '../model/geometry'
 import { DATA_VERSION, migrate, toRawData } from '../model/migrations'
 import {
@@ -43,6 +45,7 @@ const META_DATA_VERSION = 'dataVersion'
 const META_LEGACY_DATA_VERSION = 'versionDonnees'
 const META_CLASS_ORDER = 'classOrder'
 const META_BACKUP = 'preMigrationBackup'
+const META_SYNC_BACKUP = 'preSyncBackup'
 
 type State = {
   ready: boolean
@@ -112,6 +115,8 @@ type Actions = {
   setNotes(planId: string, notes: string): void
 
   importData(file: ExportFile, mode: 'merge' | 'replace'): Promise<void>
+  /** Merges edits made on another device. A copy of what they replace is kept in the `meta` store. */
+  applySync(changes: Change[]): Promise<void>
 }
 
 export type AppStore = State & Actions
@@ -162,13 +167,14 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           return plan
         changed = true
         scheduleSave('plans', plan.id)
-        return { ...plan, assignments, rules }
+        return { ...plan, assignments, rules, updatedAt: new Date().toISOString() }
       })
       if (changed) set({ plans: next })
     }
 
     const updateClass = (id: string, fn: (c: SchoolClass) => SchoolClass) => {
-      set((s) => ({ classes: s.classes.map((c) => (c.id === id ? fn(c) : c)) }))
+      const now = new Date().toISOString()
+      set((s) => ({ classes: s.classes.map((c) => (c.id === id ? stampChangedStudents(c, fn(c), now) : c)) }))
       scheduleSave('classes', id)
       purgePlans()
     }
@@ -178,7 +184,8 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       purgePlans()
     }
     const updatePlan = (id: string, fn: (p: Plan) => Plan) => {
-      set((s) => ({ plans: s.plans.map((p) => (p.id === id ? fn(p) : p)) }))
+      const now = new Date().toISOString()
+      set((s) => ({ plans: s.plans.map((p) => (p.id === id ? { ...fn(p), updatedAt: now } : p)) }))
       scheduleSave('plans', id)
     }
     const updateCurrentClass = (fn: (c: SchoolClass) => SchoolClass) => {
@@ -518,6 +525,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           status,
           notes: '',
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         }
         set((s) => ({ plans: [...s.plans, plan], currentPlanId: plan.id, view: 'plans' }))
         scheduleSave('plans', plan.id)
@@ -552,6 +560,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           notes: '',
           parentId: source.id,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           testingSince: undefined,
         }
         set((s) => ({ plans: [...s.plans, copy], currentPlanId: copy.id }))
@@ -576,6 +585,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           notes: '',
           parentId: source.id,
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           testingSince: undefined,
         }
         set((s) => ({ plans: [...s.plans, copy], currentPlanId: copy.id }))
@@ -589,6 +599,18 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
           testingSince: status === 'testing' && !p.testingSince ? new Date().toISOString() : p.testingSince,
         })),
       setNotes: (planId, notes) => updatePlan(planId, (p) => ({ ...p, notes })),
+
+      async applySync(changes) {
+        const { classes, plans } = get()
+        await storage.setMeta(META_SYNC_BACKUP, { date: new Date().toISOString(), classes, plans })
+        // Set directly rather than through the update helpers: the edits keep the date they were made on.
+        set(applyChanges(classes, plans, changes))
+        for (const change of changes) {
+          if (change.kind === 'student') scheduleSave('classes', change.classId)
+          else scheduleSave('plans', change.plan.id)
+        }
+        purgePlans()
+      },
 
       async importData(file, mode) {
         if (mode === 'replace') {

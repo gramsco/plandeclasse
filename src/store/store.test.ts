@@ -3,6 +3,7 @@ import { buildFile, readFile } from '../io/file'
 import { roomSeats } from '../model/geometry'
 import { LEGACY_V2, legacyFile } from '../model/legacyFixtures'
 import { DATA_VERSION } from '../model/migrations'
+import { buildPatch, diffPatch } from '../model/sync'
 import { parseStudentList } from '../model/types'
 import { memoryStorage } from '../storage/memory'
 import { createAppStore } from './store'
@@ -43,6 +44,23 @@ describe('students and classes', () => {
     const [student] = get().classes[0].students
     get().updateStudent(student.id, { note: 'Sits near the window' })
     expect(get().classes[0].students[0].note).toBe('Sits near the window')
+  })
+
+  it('dates the edits of students and plans, and only those', async () => {
+    const { get } = await newStore()
+    const classId = get().addClass('A', 2)
+    const planId = get().createPlan(classId, get().addRoom('empty'))
+    const [edited, untouched] = get().classes[0].students
+    const before = { student: untouched.updatedAt, plan: get().plans[0].updatedAt }
+    await new Promise((resolve) => setTimeout(resolve, 5)) // the clock has millisecond resolution
+
+    get().setLight(edited.id, 'red')
+    get().setNotes(planId, 'Try this one')
+
+    const [after, other] = get().classes[0].students
+    expect(after.updatedAt > edited.updatedAt).toBe(true)
+    expect(other.updatedAt).toBe(before.student)
+    expect(get().plans[0].updatedAt > before.plan).toBe(true)
   })
 
   it('edits a student of another class than the selected one', async () => {
@@ -317,5 +335,30 @@ describe('data versions and migrations', () => {
     expect(get().classes).toHaveLength(0)
     expect(await storage.getMeta('versionDonnees')).toBe(99)
     expect((await storage.loadClasses())[0]).toEqual(LEGACY_V2.classes[0])
+  })
+})
+
+describe('sync', () => {
+  it('merges the edits of another device and keeps their date, the photos and a backup', async () => {
+    const desktop = await newStore()
+    const classId = desktop.get().addClass('A', 2)
+    const [student] = desktop.get().classes[0].students
+    const phone = await newStore()
+    // The phone starts from a copy of the desktop, as after importing its .classe file.
+    await phone.get().importData(await buildFile(desktop.get(), desktop.storage), 'replace')
+    const since = new Date().toISOString()
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    phone.get().setLight(student.id, 'red')
+
+    const patch = buildPatch(phone.get().classes, phone.get().plans, since, new Date().toISOString())
+    const changes = diffPatch(patch, desktop.get().classes, desktop.get().plans)
+    await desktop.get().applySync(changes)
+
+    const merged = desktop.get().classes.find((c) => c.id === classId)!.students[0]
+    expect(merged.light).toBe('red')
+    expect(merged.updatedAt).toBe(phone.get().classes[0].students[0].updatedAt)
+    expect(await desktop.storage.getMeta('preSyncBackup')).toMatchObject({ classes: [expect.anything()] })
+    await flush()
+    expect((await desktop.storage.loadClasses())[0].students[0].light).toBe('red')
   })
 })

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { buildFile, download, readFile, type ExportFile } from '../io/file'
 import { storage, useApp } from '../store'
 import { askConfirm } from './ask'
-import { Download, ICON, Upload } from './icons'
+import { Download, ICON, RefreshCw, Upload } from './icons'
 import { Modal } from './Modal'
+import { SyncDialog } from './SyncDialog'
 
 const LAST_EXPORT_KEY = 'lastExport'
 const LEGACY_LAST_EXPORT_KEY = 'derniereSauvegarde'
@@ -15,6 +16,7 @@ export function FileMenu({ onExported }: { onExported(): void }) {
   const input = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<ExportFile>()
   const [error, setError] = useState<string>()
+  const [syncing, setSyncing] = useState(false)
 
   const exportAll = async () => {
     const exportFile = await buildFile(state, storage)
@@ -64,6 +66,13 @@ export function FileMenu({ onExported }: { onExported(): void }) {
       <button onClick={() => input.current?.click()}>
         <Upload size={ICON} /> Importer
       </button>
+      <button
+        onClick={() => setSyncing(true)}
+        title="Reporter sur l'ordinateur les modifications faites sur le téléphone"
+      >
+        <RefreshCw size={ICON} /> Synchroniser
+      </button>
+      {syncing && <SyncDialog onClose={() => setSyncing(false)} />}
       <input
         ref={input}
         type="file"

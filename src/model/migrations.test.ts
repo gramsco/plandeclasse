@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4, LEGACY_V5, LEGACY_V6, LEGACY_V7 } from './legacyFixtures'
+import {
+  LEGACY_V1,
+  LEGACY_V2,
+  LEGACY_V3,
+  LEGACY_V4,
+  LEGACY_V5,
+  LEGACY_V6,
+  LEGACY_V7,
+  LEGACY_V8,
+} from './legacyFixtures'
 import { DATA_VERSION, migrate, toRawData } from './migrations'
+
+const EPOCH = '1970-01-01T00:00:00.000Z'
+const withUpdatedAt = <C extends { students: object[] }>(c: C) => ({
+  ...c,
+  students: c.students.map((s) => ({ ...s, updatedAt: EPOCH })),
+})
+
+const dated = <P extends object>(plans: P[]) => plans.map((p) => ({ ...p, updatedAt: EPOCH }))
 
 describe('migrations', () => {
   it('renames every field and value from data version 2 on', () => {
@@ -22,6 +39,7 @@ describe('migrations', () => {
           delegate: false,
           deputy: false,
           note: '',
+          updatedAt: EPOCH,
         },
         {
           id: 'e2',
@@ -36,6 +54,7 @@ describe('migrations', () => {
           delegate: false,
           deputy: false,
           note: '',
+          updatedAt: EPOCH,
         },
       ],
     })
@@ -74,6 +93,7 @@ describe('migrations', () => {
       parentId: 'p0',
       createdAt: '2026-01-01',
       testingSince: '2026-01-02',
+      updatedAt: EPOCH,
     })
   })
 
@@ -83,7 +103,7 @@ describe('migrations', () => {
       expect.objectContaining({ firstName: 'Ada', delegate: false }),
       expect.objectContaining({ firstName: 'Sam', delegate: false }),
     ])
-    expect(migrate(LEGACY_V3, 3).plans).toEqual(LEGACY_V3.plans)
+    expect(migrate(LEGACY_V3, 3).plans).toEqual(dated(LEGACY_V3.plans))
   })
 
   it('keeps delegates and marks nobody as a deputy from data version 4 to 5', () => {
@@ -92,12 +112,12 @@ describe('migrations', () => {
       expect.objectContaining({ delegate: true, deputy: false }),
       expect.objectContaining({ delegate: false, deputy: false }),
     ])
-    expect(migrate(LEGACY_V4, 4).plans).toEqual(LEGACY_V4.plans)
+    expect(migrate(LEGACY_V4, 4).plans).toEqual(dated(LEGACY_V4.plans))
   })
 
   it('keeps the rules untouched from data version 5 to 6', () => {
     const data = migrate(LEGACY_V5, 5)
-    expect(data.plans).toEqual(LEGACY_V5.plans)
+    expect(data.plans).toEqual(dated(LEGACY_V5.plans))
     expect(data.classes[0]).toMatchObject({ id: 'c1', name: '6e A' })
   })
 
@@ -107,14 +127,21 @@ describe('migrations', () => {
       expect.objectContaining({ firstName: 'Ada', note: '' }),
       expect.objectContaining({ firstName: 'Sam', note: '' }),
     ])
-    expect(migrate(LEGACY_V6, 6).plans).toEqual(LEGACY_V6.plans)
+    expect(migrate(LEGACY_V6, 6).plans).toEqual(dated(LEGACY_V6.plans))
   })
 
   it('keeps rooms and everything else as is from data version 7 to 8', () => {
     const data = migrate(LEGACY_V7, 7)
     expect(data.rooms).toEqual(LEGACY_V7.rooms)
-    expect(data.classes).toEqual(LEGACY_V7.classes)
-    expect(data.plans).toEqual(LEGACY_V7.plans)
+    expect(data.classes).toEqual(LEGACY_V7.classes.map(withUpdatedAt))
+    expect(data.plans).toEqual(dated(LEGACY_V7.plans))
+  })
+
+  it('dates every student and plan at the epoch from data version 8 to 9', () => {
+    const data = migrate(LEGACY_V8, 8)
+    expect(data.rooms).toEqual(LEGACY_V8.rooms)
+    expect(data.classes).toEqual(LEGACY_V8.classes.map(withUpdatedAt))
+    expect(data.plans).toEqual(dated(LEGACY_V8.plans))
   })
 
   it('chains from version 1 up to the current version', () => {

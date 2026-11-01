@@ -207,3 +207,17 @@ export const LEGACY_V7 = {
     },
   ],
 }
+
+/** Data version 8: doors, windows and boards exist; students and plans carry no `updatedAt` yet. */
+export const LEGACY_V8 = {
+  ...LEGACY_V7,
+  rooms: [
+    {
+      ...LEGACY_V7.rooms[0],
+      furniture: [
+        ...LEGACY_V7.rooms[0].furniture,
+        { id: 'm3', type: 'door', x: 0, y: 300, rotation: 90, width: 90, height: 12, seats: [] },
+      ],
+    },
+  ],
+}

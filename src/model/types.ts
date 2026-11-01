@@ -32,6 +32,7 @@ export type Student = {
   deputy: boolean // deputy class representative (silver crown); a student is never both
   role: 'student' | 'aesh'
   supports: string[] // ids of the students an AESH supports
+  updatedAt: string // ISO time of the last edit; lets a phone's changes be merged into another device
 }
 
 /** A school class is a list of people, independent of any physical room. */
@@ -90,6 +91,7 @@ export type Plan = {
   parentId?: string
   createdAt: string
   testingSince?: string
+  updatedAt: string // ISO time of the last edit, see `Student.updatedAt`
 }
 
 export const newId = () => crypto.randomUUID()
@@ -105,6 +107,7 @@ export const newStudent = (firstName: string, lastName = ''): Student => ({
   deputy: false,
   role: 'student',
   supports: [],
+  updatedAt: new Date().toISOString(),
 })
 
 export const newAesh = (firstName: string, lastName = ''): Student => ({
@@ -133,6 +136,9 @@ export const COMMON_ANNOTATIONS: Record<string, string> = {
 export const isAesh = (s: Student) => s.role === 'aesh'
 export const fullName = (s: Student) => `${s.firstName} ${s.lastName}`.trim()
 
+/** Timestamp of data that predates `updatedAt`: any real edit made since is newer. */
+export const EPOCH = '1970-01-01T00:00:00.000Z'
+
 // ---- Normalisation: fills in defaults for data coming from older versions or imported files ----
 // These accept any input on purpose: they are the boundary with untrusted persisted data.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -149,6 +155,7 @@ export const normalizeStudent = (s: any): Student => ({
   deputy: s.deputy === true && s.delegate !== true,
   role: s.role === 'aesh' ? 'aesh' : 'student',
   supports: Array.isArray(s.supports) ? s.supports : [],
+  updatedAt: String(s.updatedAt ?? EPOCH),
 })
 
 export const normalizeClass = (c: any): SchoolClass => ({
@@ -188,6 +195,7 @@ export const normalizePlan = (p: any): Plan => ({
   parentId: p.parentId ? String(p.parentId) : undefined,
   createdAt: String(p.createdAt ?? new Date().toISOString()),
   testingSince: p.testingSince ? String(p.testingSince) : undefined,
+  updatedAt: String(p.updatedAt ?? EPOCH),
 })
 /* eslint-enable @typescript-eslint/no-explicit-any */
 

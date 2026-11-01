@@ -3,6 +3,13 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.13.0 — 2026-11-01
+
+- **Modifier sur son téléphone, puis reporter sur l'ordinateur** : le bouton « Synchroniser » affiche vos modifications
+  (places, feux tricolores, annotations, notes…) sous forme de code QR sur le téléphone, et l'ordinateur les lit avec sa
+  caméra. Vous choisissez quelles modifications appliquer. Rien ne passe par Internet.
+- **Sur téléphone, la vue 3D n'est plus proposée** : elle est lourde et peu pratique sur un petit écran.
+
 ## 0.12.0 — 2026-11-01
 
 - **Se promener dans la classe en 3D** : un nouveau point de vue, depuis le bureau du prof, où l'on marche avec les

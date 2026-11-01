@@ -258,6 +258,28 @@ L'export sert à **sauvegarder** (les navigateurs peuvent perdre les données, v
 
 Les anciens fichiers restent lisibles : ils sont convertis à l'import. Un fichier créé par une version *plus récente* de l'application est refusé avec un message qui explique pourquoi.
 
+
+### Modifier sur son téléphone, puis reporter sur l'ordinateur
+
+Vous pouvez ajuster un plan ou une fiche élève depuis votre téléphone, sans connexion, puis reporter ces modifications sur l'ordinateur **avec un code QR**. Rien ne passe par Internet : l'ordinateur lit l'écran du téléphone avec sa caméra.
+
+**Une fois, pour commencer** : exportez vos données depuis l'ordinateur (bouton **Exporter**) et ouvrez le fichier `.classe` sur le téléphone (bouton **Importer**). Le téléphone et l'ordinateur ont alors les mêmes données.
+
+**Ensuite, à chaque fois :**
+
+1. Sur le **téléphone**, modifiez ce que vous voulez : places, feux tricolores, annotations, notes…
+2. Sur le téléphone, cliquez sur **Synchroniser**, puis **Envoyer**. Un code QR s'affiche ; s'il y a beaucoup de modifications, il change tout seul plusieurs fois.
+3. Sur l'**ordinateur**, cliquez sur **Synchroniser**, puis **Recevoir**, et autorisez la caméra. Présentez l'écran du téléphone et gardez-le en face jusqu'à la fin de la lecture.
+4. L'ordinateur liste les modifications reçues (« Plan 6e A — 3 place(s) modifiée(s) », « Ada Lovelace — feu tricolore »…). Décochez celles que vous ne voulez pas, puis **Appliquer**.
+5. Sur le téléphone, cliquez sur **L'ordinateur a tout reçu** : la prochaine fois, seules les nouvelles modifications seront envoyées.
+
+À savoir :
+
+- Seules les **modifications d'élèves et de plans** voyagent. Les photos, les classes et les salles créées sur le téléphone ne sont pas transférées : passez par un export `.classe`.
+- Si un élément a été modifié plus récemment sur l'ordinateur, il n'est pas écrasé.
+- Avant d'appliquer, l'application garde une copie de ce qu'elle remplace.
+- La vue 3D n'est pas proposée sur téléphone.
+
 ---
 
 ## Sécurité et confidentialité des données
