@@ -2,17 +2,18 @@ import { useState } from 'react'
 import { Modal } from './Modal'
 import { SyncLink } from './SyncLink'
 import { SyncReceive } from './SyncReceive'
-import { SyncSendChanges, SyncSendClasses } from './SyncSend'
+import { SyncSend } from './SyncSend'
 
 /** Moves data between two devices, by QR codes or over a direct connection: no server is ever involved. */
 export function SyncDialog({ onClose }: { onClose(): void }) {
-  const [mode, setMode] = useState<'classes' | 'changes' | 'receive' | 'link'>()
+  const [mode, setMode] = useState<'send' | 'receive' | 'link'>()
   return (
     <Modal title="Synchroniser" onClose={onClose}>
-      {mode === 'classes' ? (
-        <SyncSendClasses onDone={onClose} />
-      ) : mode === 'changes' ? (
-        <SyncSendChanges onDone={onClose} />
+      {mode === 'send' ? (
+        <SyncSend
+          onDone={onClose}
+          lead="Un code s'affichera pour que l'autre appareil le lise avec sa caméra. Que voulez-vous envoyer ?"
+        />
       ) : mode === 'receive' ? (
         <SyncReceive onDone={onClose} />
       ) : mode === 'link' ? (
@@ -20,28 +21,14 @@ export function SyncDialog({ onClose }: { onClose(): void }) {
       ) : (
         <>
           <p>
-            Passez des données d'un appareil à l'autre en les lisant à la caméra : elles ne passent par aucun serveur.
-            Sur un appareil, choisissez « Envoyer » ; sur l'autre, « Recevoir ».
+            Passez des données d'un appareil à l'autre sans serveur. Avec des codes : l'un affiche (« Envoyer »),
+            l'autre lit avec sa caméra (« Recevoir »). Ou, pour des échanges répétés sur le même Wi-Fi, reliez les deux
+            appareils une fois avec « Connexion directe ».
           </p>
-          <ul className="sync-menu">
-            <li>
-              <strong>Envoyer mes classes</strong> : pour installer vos classes sur un nouvel appareil (premier
-              transfert, sans les photos).
-            </li>
-            <li>
-              <strong>Envoyer mes modifications</strong> : pour reporter des modifications faites depuis la dernière
-              synchronisation.
-            </li>
-            <li>
-              <strong>Connexion directe</strong> : les deux appareils, sur le même Wi-Fi, s'échangent deux codes puis
-              communiquent sans passer par Internet. Plus pratique pour des échanges répétés.
-            </li>
-          </ul>
           <div className="form-actions">
             <button onClick={onClose}>Annuler</button>
-            <button onClick={() => setMode('classes')}>Envoyer mes classes</button>
-            <button onClick={() => setMode('changes')}>Envoyer mes modifications</button>
             <button onClick={() => setMode('link')}>Connexion directe</button>
+            <button onClick={() => setMode('send')}>Envoyer</button>
             <button className="primary" onClick={() => setMode('receive')}>
               Recevoir
             </button>

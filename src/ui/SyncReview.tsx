@@ -120,8 +120,8 @@ export function SyncReview({ text, onDone, onRetry }: { text: string; onDone(): 
     return items.length === 0 ? (
       <>
         <p>
-          Ces classes sont déjà sur cet appareil. Pour reporter des modifications, utilisez « Envoyer mes modifications
-          ».
+          Ces classes sont déjà sur cet appareil. Pour reporter des modifications, utilisez « Envoyer » → « Mes
+          modifications ».
         </p>
         <div className="form-actions">
           <button className="primary" autoFocus onClick={onDone}>

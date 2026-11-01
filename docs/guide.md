@@ -265,7 +265,7 @@ Vous pouvez installer vos classes sur votre téléphone, les ajuster sans connex
 
 **Première fois : installer vos classes sur le téléphone**
 
-1. Sur l'**ordinateur**, cliquez sur **Synchroniser** → **Envoyer mes classes**, cochez les classes voulues, puis **Afficher le code**.
+1. Sur l'**ordinateur**, cliquez sur **Synchroniser** → **Envoyer** → **Mes classes**, cochez les classes voulues, puis **Afficher le code**.
 2. Sur le **téléphone**, cliquez sur **Synchroniser** → **Recevoir** et autorisez la caméra. Visez l'écran de l'ordinateur et gardez-le en face jusqu'à la fin de la lecture (une classe prend une dizaine de secondes : le code change tout seul).
 3. Le téléphone liste les classes reçues : cochez celles à ajouter, puis **Ajouter**.
 
@@ -274,15 +274,15 @@ Les classes arrivent avec leurs plans et leurs salles, **sans les photos**. Pour
 **Ensuite : reporter les modifications du téléphone sur l'ordinateur**
 
 1. Sur le **téléphone**, modifiez ce que vous voulez : places, feux tricolores, annotations, notes…
-2. Toujours sur le téléphone, cliquez sur **Synchroniser** → **Envoyer mes modifications**. Un code s'affiche.
+2. Toujours sur le téléphone, cliquez sur **Synchroniser** → **Envoyer** → **Mes modifications**. Un code s'affiche.
 3. Sur l'**ordinateur**, cliquez sur **Synchroniser** → **Recevoir** et présentez l'écran du téléphone à la caméra.
 4. L'ordinateur liste les modifications reçues (« Plan « 6e A » — 3 place(s) modifiée(s) », « Ada Lovelace — feu tricolore »…). Décochez celles que vous ne voulez pas, puis **Appliquer**.
 5. Sur le téléphone, cliquez sur **L'autre appareil a tout reçu** : la prochaine fois, seules les nouvelles modifications seront envoyées.
 
 À savoir :
 
-- Seules les **modifications d'élèves et de plans** se reportent. Une classe ou une salle créée sur un appareil se transmet avec « Envoyer mes classes ».
-- Une classe déjà présente sur l'appareil qui reçoit n'est jamais écrasée par « Envoyer mes classes ».
+- Seules les **modifications d'élèves et de plans** se reportent. Une classe ou une salle créée sur un appareil se transmet avec « Envoyer » → « Mes classes ».
+- Une classe déjà présente sur l'appareil qui reçoit n'est jamais écrasée par « Envoyer » → « Mes classes ».
 - Si un élément a été modifié plus récemment sur l'appareil qui reçoit, il n'est pas écrasé.
 - Avant d'appliquer des modifications, l'application garde une copie de ce qu'elle remplace.
 - La vue 3D n'est pas proposée sur téléphone.
@@ -294,7 +294,7 @@ Si les deux appareils sont sur le **même réseau Wi-Fi** (ou si l'un utilise le
 1. Sur le premier appareil, cliquez sur **Synchroniser** → **Connexion directe** → **Commencer** et autorisez la caméra. Un code s'affiche.
 2. Sur le second, **Synchroniser** → **Connexion directe** → **Rejoindre**, et visez ce code. Le second affiche alors son propre code.
 3. Présentez-le à la caméra du premier. Les deux appareils indiquent « Connecté ».
-4. Chacun peut alors **Envoyer mes classes** ou **Envoyer mes modifications**. Ce que l'autre vous envoie s'affiche, et vous cochez ce qu'il faut appliquer, exactement comme avec les codes QR.
+4. Chacun peut alors envoyer **Mes classes** ou **Mes modifications**. Ce que l'autre vous envoie s'affiche, et vous cochez ce qu'il faut appliquer, exactement comme avec les codes QR.
 
 Les codes ne servent qu'à présenter les appareils l'un à l'autre. Ensuite, les données passent **directement de l'un à l'autre, sur votre réseau local**, chiffrées, sans serveur, sans compte et sans Internet. La connexion s'arrête quand vous fermez la fenêtre.
 

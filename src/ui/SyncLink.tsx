@@ -15,7 +15,7 @@ import { parseCard } from '../model/pairing'
 import { newId } from '../model/types'
 import { QrSvg } from './QrSvg'
 import { SyncReview } from './SyncReview'
-import { SyncSendChanges, SyncSendClasses, type Delivery } from './SyncSend'
+import { SyncSend, type Delivery } from './SyncSend'
 import { useQrScanner } from './useQrScanner'
 
 const ACK_TIMEOUT_MS = 30_000
@@ -132,8 +132,7 @@ type Pending = { resolve(): void; reject(error: Error): void }
 /** Once connected, both devices can send; what arrives goes through the same review as a scanned transfer. */
 function LinkSession({ link, onDone }: { link: PeerLink; onDone(): void }) {
   const state = useLinkState(link)
-  const [mode, setMode] = useState<'menu' | 'classes' | 'changes'>('menu')
-  // Transfers wait for their turn: one arriving mid-review or mid-send must not replace what the teacher is doing.
+  // Transfers wait for their turn: one arriving mid-review must not replace the review in progress.
   const [queue, setQueue] = useState<Incoming[]>([])
   const reception = useRef<Reception>(emptyReception)
   const pending = useRef(new Map<string, Pending>())
@@ -210,22 +209,19 @@ function LinkSession({ link, onDone }: { link: PeerLink; onDone(): void }) {
         </div>
       </>
     )
-  if (mode === 'menu' && queue.length > 0)
-    return <SyncReview key={queue[0].n} text={queue[0].text} onDone={() => setQueue((q) => q.slice(1))} />
-  if (mode === 'classes') return <SyncSendClasses delivery={delivery} onDone={() => setMode('menu')} />
-  if (mode === 'changes') return <SyncSendChanges delivery={delivery} onDone={() => setMode('menu')} />
+  // Hidden rather than unmounted: a send in progress must still report its outcome once the review is done.
   return (
     <>
-      <p role="status">
-        Connecté. Les données passent directement d'un appareil à l'autre. Ce que l'autre appareil vous envoie s'affiche
-        ici, et vous choisissez ce qu'il faut appliquer.
-      </p>
-      <div className="form-actions">
-        <button onClick={onDone}>Déconnecter</button>
-        <button onClick={() => setMode('classes')}>Envoyer mes classes</button>
-        <button className="primary" onClick={() => setMode('changes')}>
-          Envoyer mes modifications
-        </button>
+      {queue.length > 0 && (
+        <SyncReview key={queue[0].n} text={queue[0].text} onDone={() => setQueue((q) => q.slice(1))} />
+      )}
+      <div hidden={queue.length > 0}>
+        <SyncSend
+          delivery={delivery}
+          onDone={onDone}
+          cancelLabel="Déconnecter"
+          lead="Connecté. Les données passent directement d'un appareil à l'autre. Ce que l'autre appareil vous envoie s'affiche ici, et vous choisissez ce qu'il faut appliquer. Que voulez-vous envoyer ?"
+        />
       </div>
     </>
   )

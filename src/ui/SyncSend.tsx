@@ -87,7 +87,7 @@ function SendFailed({ message, onDone }: { message: string; onDone(): void }) {
 const INTRO = "Sur l'autre appareil : Synchroniser → Recevoir, puis visez ce code avec la caméra."
 
 /** The edits made since the last sync. */
-export function SyncSendChanges({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
+function SyncSendChanges({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
   const { classes, plans } = useApp()
   const [since] = useState(getLastSync)
   const [now] = useState(() => new Date().toISOString())
@@ -145,7 +145,7 @@ export function SyncSendChanges({ onDone, delivery }: { onDone(): void; delivery
 }
 
 /** Whole classes with their plans and rooms, to set up another device. Photos do not travel. */
-export function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
+function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery?: Delivery }) {
   const { classes, rooms, plans } = useApp()
   const [chosen, setChosen] = useState(() => new Set(classes.map((c) => c.id)))
   const [frames, setFrames] = useState<string[]>()
@@ -216,6 +216,44 @@ export function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery
           }}
         >
           {delivery ? 'Envoyer' : 'Afficher le code'}
+        </button>
+      </div>
+    </>
+  )
+}
+
+/** Picks what to send; over a direct connection it comes back here after each send, so several can follow. */
+export function SyncSend({
+  onDone,
+  delivery,
+  lead,
+  cancelLabel = 'Annuler',
+}: {
+  onDone(): void
+  delivery?: Delivery
+  lead: string
+  cancelLabel?: string
+}) {
+  const [what, setWhat] = useState<'classes' | 'changes'>()
+  const back = delivery ? () => setWhat(undefined) : onDone
+  if (what === 'classes') return <SyncSendClasses delivery={delivery} onDone={back} />
+  if (what === 'changes') return <SyncSendChanges delivery={delivery} onDone={back} />
+  return (
+    <>
+      <p>{lead}</p>
+      <ul className="sync-menu">
+        <li>
+          <strong>Mes classes</strong> : pour installer vos classes sur un nouvel appareil (sans les photos).
+        </li>
+        <li>
+          <strong>Mes modifications</strong> : pour reporter ce qui a changé depuis la dernière synchronisation.
+        </li>
+      </ul>
+      <div className="form-actions">
+        <button onClick={onDone}>{cancelLabel}</button>
+        <button onClick={() => setWhat('classes')}>Mes classes</button>
+        <button className="primary" onClick={() => setWhat('changes')}>
+          Mes modifications
         </button>
       </div>
     </>

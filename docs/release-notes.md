@@ -3,6 +3,12 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## À venir
+
+- **Synchroniser, plus simple** : la fenêtre ne propose plus que « Envoyer », « Recevoir » et « Connexion directe ».
+  Le choix entre vos classes et vos modifications se fait ensuite, de la même façon avec les codes QR ou en connexion
+  directe.
+
 ## 0.15.1 — 2026-11-01
 
 - **Connexion directe** : l'appareil qui rejoint garde son code affiché jusqu'à ce que le premier appareil l'ait lu.
