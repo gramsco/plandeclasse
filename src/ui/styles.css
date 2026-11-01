@@ -1640,3 +1640,85 @@ button > svg.lucide {
   width: 100%;
   min-width: 0;
 }
+
+/* ---- 3D view ---- */
+.scene3d {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--card);
+}
+.scene3d-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.segmented {
+  display: flex;
+}
+.segmented button[aria-pressed='true'],
+.canvas-tabs button[aria-pressed='true'] {
+  background: var(--accent);
+  color: white;
+}
+.segmented button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.segmented button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.scene3d-host {
+  height: min(60vh, 520px);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.scene3d .hint {
+  margin: 0;
+}
+.scene3d:fullscreen {
+  padding: 0.5rem;
+}
+.scene3d:fullscreen .scene3d-host {
+  flex: 1;
+  height: auto;
+  border-radius: 0;
+}
+.canvas-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+.furniture.door {
+  fill: #e6c9a0;
+  stroke: #a4693a;
+}
+.furniture.window {
+  fill: #d4ecfa;
+  stroke: #6fa8cc;
+}
+.furniture.board {
+  fill: #b9d6c6;
+  stroke: #2f5d46;
+}
+.furniture.whiteboard {
+  fill: #f4f4f0;
+  stroke: #6b7280;
+}
+.wall-label {
+  font-size: 13px;
+}
+
+.seat-mark {
+  fill: #cdb48a;
+  stroke: #9a7b45;
+  stroke-width: 1.5;
+  opacity: 0.85;
+}
+
+.seat-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+  margin-left: 0.75rem;
+}

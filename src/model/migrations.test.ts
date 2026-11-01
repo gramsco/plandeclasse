@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4, LEGACY_V5, LEGACY_V6 } from './legacyFixtures'
+import { LEGACY_V1, LEGACY_V2, LEGACY_V3, LEGACY_V4, LEGACY_V5, LEGACY_V6, LEGACY_V7 } from './legacyFixtures'
 import { DATA_VERSION, migrate, toRawData } from './migrations'
 
 describe('migrations', () => {
@@ -108,6 +108,13 @@ describe('migrations', () => {
       expect.objectContaining({ firstName: 'Sam', note: '' }),
     ])
     expect(migrate(LEGACY_V6, 6).plans).toEqual(LEGACY_V6.plans)
+  })
+
+  it('keeps rooms and everything else as is from data version 7 to 8', () => {
+    const data = migrate(LEGACY_V7, 7)
+    expect(data.rooms).toEqual(LEGACY_V7.rooms)
+    expect(data.classes).toEqual(LEGACY_V7.classes)
+    expect(data.plans).toEqual(LEGACY_V7.plans)
   })
 
   it('chains from version 1 up to the current version', () => {

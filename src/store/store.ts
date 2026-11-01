@@ -12,7 +12,7 @@ import {
   transposeAssignments,
   type FillStrategy,
 } from '../model/plan'
-import { createFurniture, duplicateFurniture, duplicateRoom, findRoomTemplate } from '../model/rooms'
+import { createFurniture, createFurnitureIn, duplicateFurniture, duplicateRoom, findRoomTemplate } from '../model/rooms'
 import {
   newAesh,
   newId,
@@ -468,26 +468,8 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
         updateRoom(id, (r) => ({ ...r, width: Math.max(400, width), height: Math.max(300, height) })),
 
       addFurniture(roomId, type) {
-        const furniture = createFurniture(type, 0, 0)
         const room = roomById(roomId)
-        if (room) {
-          // First free spot on the grid, scanning the room.
-          const isFree = (x: number, y: number) => {
-            const rect = footprint({ ...furniture, x, y })
-            return room.furniture.every((other) => {
-              const o = footprint(other)
-              return rect.x >= o.x + o.w || o.x >= rect.x + rect.w || rect.y >= o.y + o.h || o.y >= rect.y + rect.h
-            })
-          }
-          const step = 20
-          scan: for (let y = 20; y + furniture.height <= room.height; y += step)
-            for (let x = 20; x + furniture.width <= room.width; x += step)
-              if (isFree(x, y)) {
-                furniture.x = x
-                furniture.y = y
-                break scan
-              }
-        }
+        const furniture = room ? createFurnitureIn(room, type) : createFurniture(type, 0, 0)
         updateRoom(roomId, (r) => ({ ...r, furniture: [...r.furniture, furniture] }))
         return furniture.id
       },

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type SVGProps } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type PointerEvent, type SVGProps } from 'react'
 import { analyze } from '../model/analysis'
 import { CARD, PHOTO, roomSeats, seatCenter } from '../model/geometry'
 import { matchesFilter, STUDENT_FILTER_LABELS, STUDENT_FILTERS, type StudentFilter } from '../model/filters'
@@ -25,8 +25,10 @@ import {
   savePrintOptions,
   type PrintOptions,
 } from './printOptions'
-import { Crown, Dices, ICON, PanelLeftClose, PanelLeftOpen, Printer, TriangleAlert, X } from './icons'
+import { Box, Crown, Dices, ICON, PanelLeftClose, PanelLeftOpen, Printer, TriangleAlert, X } from './icons'
+import { Scene3D } from './lazyScene3D'
 import { Modal } from './Modal'
+import { SceneBoundary } from './SceneBoundary'
 import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
 import { AnnotationEditor } from './AnnotationEditor'
 import { askConfirm } from './ask'
@@ -64,6 +66,7 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [hovered, setHovered] = useState<string[]>()
   const [filter, setFilter] = useState<StudentFilter>()
   const [printOpen, setPrintOpen] = useState(false)
+  const [view3d, setView3d] = useState(false)
   const [selectedId, setSelectedId] = useState<string>()
   const [tip, setTip] = useState<{ student: Student; x: number; y: number }>()
   useEffect(() => savePrintOptions(options), [options])
@@ -277,6 +280,9 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
                     )}
                   </>
                 )}
+                <button onClick={() => setView3d(true)}>
+                  <Box size={ICON} /> Vue 3D
+                </button>
                 <button className="primary" onClick={() => setPrintOpen(true)}>
                   <Printer size={ICON} /> Imprimer / PDF…
                 </button>
@@ -370,6 +376,20 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
       </div>
       {tip && !dragging && <StudentTooltip {...tip} />}
 
+      {view3d && (
+        <Modal title={`${plan.name} — vue 3D`} wide onClose={() => setView3d(false)}>
+          <SceneBoundary>
+            <Suspense fallback={<p className="hint">Chargement de la vue 3D…</p>}>
+              <Scene3D room={room} plan={plan} schoolClass={schoolClass} photoUrls={photoUrls} />
+            </Suspense>
+          </SceneBoundary>
+          <div className="row">
+            <button autoFocus onClick={() => setView3d(false)}>
+              Fermer
+            </button>
+          </div>
+        </Modal>
+      )}
       {printOpen && (
         <PrintDialog
           sample={sample}

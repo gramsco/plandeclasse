@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react'
+import { Suspense, useEffect, useRef, useState, type PointerEvent } from 'react'
 import { footprint, snap, type Rect } from '../model/geometry'
 import { FURNITURE_TYPES } from '../model/rooms'
 import type { Furniture, FurnitureType, Room } from '../model/types'
 import { useApp } from '../store'
 import { toSvgPoint } from './geo'
 import { ICON, RotateCw } from './icons'
+import { Scene3D } from './lazyScene3D'
 import { RoomSvg } from './RoomSvg'
+import { SceneBoundary } from './SceneBoundary'
 
 type DragState = {
   start: { x: number; y: number }
@@ -35,6 +37,7 @@ export function RoomEditor({ room }: { room: Room }) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [selection, setSelection] = useState<string[]>([])
   const [marquee, setMarquee] = useState<Marquee>()
+  const [preview3d, setPreview3d] = useState(false)
   const drag = useRef<DragState | null>(null)
 
   const allIds = room.furniture.map((f) => f.id)
@@ -42,14 +45,15 @@ export function RoomEditor({ room }: { room: Room }) {
   const seatCount = room.furniture.reduce((n, f) => n + f.seats.length, 0)
 
   // The keyboard shortcuts always read the current state through a ref.
-  const latest = useRef({ room, selected })
+  const latest = useRef({ room, selected, preview3d })
   useEffect(() => {
-    latest.current = { room, selected }
+    latest.current = { room, selected, preview3d }
   })
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input, textarea, select')) return
-      const { room: currentRoom, selected: currentSelection } = latest.current
+      const { room: currentRoom, selected: currentSelection, preview3d: in3d } = latest.current
+      if (in3d) return // the shortcuts act on the 2D plan: not while looking at the 3D view
       const modifier = e.metaKey || e.ctrlKey
       if (modifier && e.key.toLowerCase() === 'a') {
         e.preventDefault()
@@ -168,7 +172,7 @@ export function RoomEditor({ room }: { room: Room }) {
           </button>
         ))}
 
-        <h3>Sélection {selected.length > 0 && <small>{selected.length} table(s)</small>}</h3>
+        <h3>Sélection {selected.length > 0 && <small>{selected.length} élément(s)</small>}</h3>
         {selected.length > 0 ? (
           <div className="column">
             <button onClick={() => rotateFurniture(room.id, selected)}>
@@ -186,7 +190,7 @@ export function RoomEditor({ room }: { room: Room }) {
             </button>
           </div>
         ) : (
-          <p className="hint">Cliquez une table, ou tracez un rectangle sur le fond pour en sélectionner plusieurs.</p>
+          <p className="hint">Cliquez un élément, ou tracez un rectangle sur le fond pour en sélectionner plusieurs.</p>
         )}
         <button onClick={() => setSelection(allIds)}>
           Tout sélectionner <kbd>Ctrl/⌘ A</kbd>
@@ -214,31 +218,49 @@ export function RoomEditor({ room }: { room: Room }) {
             />
           </label>
         </div>
+        <p className="hint">Le petit siège indique de quel côté s'assoit l'élève : il regarde la table.</p>
         <p className="hint">
           <kbd>Maj</kbd>+clic ajoute à la sélection. Les flèches déplacent (<kbd>Maj</kbd> = ×5). Les tables s'aimantent
           entre elles et à la grille ; <kbd>Alt</kbd> pour déplacer librement.
         </p>
       </aside>
       <div className="canvas-area">
-        <RoomSvg
-          room={room}
-          svgRef={svgRef}
-          selectedIds={selected}
-          onFurniturePointerDown={onFurniturePointerDown}
-          onBackgroundPointerDown={onBackgroundPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-        >
-          {marquee && (
-            <rect
-              className="marquee"
-              x={Math.min(marquee.x0, marquee.x1)}
-              y={Math.min(marquee.y0, marquee.y1)}
-              width={Math.abs(marquee.x1 - marquee.x0)}
-              height={Math.abs(marquee.y1 - marquee.y0)}
-            />
-          )}
-        </RoomSvg>
+        <div className="canvas-tabs no-print" role="group" aria-label="Affichage de la salle">
+          <button aria-pressed={!preview3d} onClick={() => setPreview3d(false)}>
+            Plan 2D
+          </button>
+          <button aria-pressed={preview3d} onClick={() => setPreview3d(true)}>
+            Aperçu 3D
+          </button>
+        </div>
+        {preview3d ? (
+          <SceneBoundary>
+            <Suspense fallback={<p className="hint">Chargement de la vue 3D…</p>}>
+              <Scene3D room={room} />
+            </Suspense>
+          </SceneBoundary>
+        ) : (
+          <RoomSvg
+            room={room}
+            svgRef={svgRef}
+            selectedIds={selected}
+            showSides
+            onFurniturePointerDown={onFurniturePointerDown}
+            onBackgroundPointerDown={onBackgroundPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+          >
+            {marquee && (
+              <rect
+                className="marquee"
+                x={Math.min(marquee.x0, marquee.x1)}
+                y={Math.min(marquee.y0, marquee.y1)}
+                width={Math.abs(marquee.x1 - marquee.x0)}
+                height={Math.abs(marquee.y1 - marquee.y0)}
+              />
+            )}
+          </RoomSvg>
+        )}
       </div>
     </div>
   )

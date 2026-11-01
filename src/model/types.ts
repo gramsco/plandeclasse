@@ -44,7 +44,8 @@ export type SchoolClass = {
 /** Offset from the centre of the (unrotated) furniture. */
 export type Seat = { id: string; dx: number; dy: number }
 
-export type FurnitureType = 'single' | 'double' | 'island' | 'chair' | 'teacher'
+export type FurnitureType =
+  'single' | 'double' | 'island' | 'chair' | 'teacher' | 'door' | 'window' | 'board' | 'whiteboard'
 export type Rotation = 0 | 90 | 180 | 270
 
 export type Furniture = {

@@ -3,6 +3,17 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.11.0 — 2026-11-01
+
+- **Vue 3D de la classe** : le bouton « Vue 3D » du plan montre la salle en trois dimensions, avec chaque élève sous forme de pion,
+  leur photo et leur nom. Au choix : la vue du bureau du prof, la vue depuis la place d'un élève (pour voir ce qu'il voit du
+  tableau), ou une vue libre où l'on tourne autour de la salle, en plein écran si vous le souhaitez. Rien n'est chargé tant que vous ne l'ouvrez pas.
+  ![La classe en 3D](img/release-vue-3d.png)
+
+- **Porte, fenêtres et tableau** : dans l'onglet Salles, ajoutez une porte, une fenêtre ou un tableau (noir ou blanc). En 3D, le tableau porte un exemple de texte écrit à la main. Les nouvelles
+  salles modèles ont déjà un tableau et une porte. Un « Aperçu 3D » de la salle est disponible pendant que vous la
+  composez. Un petit siège dessiné à côté de chaque place montre de quel côté s'assoit l'élève.
+
 ## 0.10.1 — 2026-11-01
 
 - **Élèves modifiables depuis tous les plans** : quand une autre classe était sélectionnée dans l'onglet Classes, la

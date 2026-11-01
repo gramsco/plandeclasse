@@ -1,4 +1,4 @@
-import { footprint } from './geometry'
+import { footprint, type Rect } from './geometry'
 import { newId, type Furniture, type FurnitureType, type Room, type Rotation } from './types'
 
 export const FURNITURE_TYPES: Record<
@@ -28,7 +28,18 @@ export const FURNITURE_TYPES: Record<
   },
   chair: { label: "Chaise d'adulte (AESH)", width: 100, height: 92, seats: [{ dx: 0, dy: 0 }] },
   teacher: { label: 'Bureau du prof', width: 180, height: 70, seats: [] },
+  door: { label: 'Porte', width: 90, height: 24, seats: [] },
+  window: { label: 'Fenêtre', width: 140, height: 24, seats: [] },
+  board: { label: 'Tableau noir', width: 240, height: 24, seats: [] },
+  whiteboard: { label: 'Tableau blanc', width: 240, height: 24, seats: [] },
 }
+
+/** Blackboard or whiteboard: the front of the room, which students face. */
+export const isBoard = (type: FurnitureType) => type === 'board' || type === 'whiteboard'
+
+/** Items that stand against a wall: not tables, no seats, drawn in the room as part of the building. */
+export const WALL_ITEMS: readonly FurnitureType[] = ['door', 'window', 'board', 'whiteboard']
+export const isWallItem = (type: FurnitureType) => WALL_ITEMS.includes(type)
 
 export function createFurniture(type: FurnitureType, x: number, y: number, rotation: Rotation = 0): Furniture {
   const t = FURNITURE_TYPES[type]
@@ -53,6 +64,47 @@ function createAtFootprint(type: FurnitureType, fx: number, fy: number, rotation
   return f
 }
 
+const overlaps = (a: Rect, b: Rect) => !(a.x >= b.x + b.w || b.x >= a.x + a.w || a.y >= b.y + b.h || b.y >= a.y + a.h)
+
+/**
+ * Creates furniture at the first free spot: scanning the room for tables, along its own wall for wall items
+ * (board on the front wall, door on the back wall, windows on the left wall).
+ */
+export function createFurnitureIn(room: Room, type: FurnitureType): Furniture {
+  const others = room.furniture.map(footprint)
+  const isFree = (f: Furniture) => others.every((o) => !overlaps(footprint(f), o))
+  const step = 20
+
+  if (isWallItem(type)) {
+    const t = FURNITURE_TYPES[type]
+    const spots: Furniture[] =
+      type === 'window'
+        ? range(100, room.height - t.width, step).map((y) => createAtFootprint(type, 0, y, 90))
+        : range(0, room.width - t.width, step).map((x) =>
+            createAtFootprint(type, x, type === 'door' ? room.height - t.height : 0),
+          )
+    // Board centred, door near the right-hand corner: the closest free spot to that anchor.
+    const anchor = type === 'window' ? 100 : isBoard(type) ? (room.width - t.width) / 2 : room.width - t.width - 40
+    const key = (f: Furniture) => Math.abs((type === 'window' ? footprint(f).y : footprint(f).x) - anchor)
+    const ordered = [...spots].sort((a, b) => key(a) - key(b))
+    return ordered.find(isFree) ?? ordered[0] ?? createFurniture(type, 0, 0)
+  }
+
+  const furniture = createFurniture(type, 0, 0)
+  for (let y = 20; y + furniture.height <= room.height; y += step)
+    for (let x = 20; x + furniture.width <= room.width; x += step) {
+      const candidate = { ...furniture, x, y }
+      if (isFree(candidate)) return candidate
+    }
+  return furniture
+}
+
+const range = (from: number, to: number, step: number) => {
+  const values: number[] = []
+  for (let v = from; v <= to; v += step) values.push(v)
+  return values
+}
+
 const emptyRoom = (name: string, width = 1200, height = 800): Room => ({
   id: newId(),
   name,
@@ -74,6 +126,13 @@ function addGrid(room: Room, type: FurnitureType, cols: number, rows: number, ga
 const addTeacherDesk = (room: Room) =>
   room.furniture.push(createFurniture('teacher', Math.round((room.width - 180) / 20) * 10, 40))
 
+/** The board and the door, added once the tables are in place so that they find a free spot. */
+const addBoardAndDoor = (room: Room) => {
+  room.furniture.push(createFurnitureIn(room, 'board'))
+  room.furniture.push(createFurnitureIn(room, 'door'))
+  return room
+}
+
 export type RoomTemplate = { key: string; label: string; description: string; create: () => Room }
 
 export const ROOM_TEMPLATES: RoomTemplate[] = [
@@ -85,7 +144,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
       const room = emptyRoom('Salle (tables doubles)')
       addTeacherDesk(room)
       addGrid(room, 'double', 3, 4, 60, 28, 170)
-      return room
+      return addBoardAndDoor(room)
     },
   },
   {
@@ -96,7 +155,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
       const room = emptyRoom('Salle (tables doubles)')
       addTeacherDesk(room)
       addGrid(room, 'double', 3, 5, 60, 28, 160)
-      return room
+      return addBoardAndDoor(room)
     },
   },
   {
@@ -107,7 +166,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
       const room = emptyRoom('Salle (îlots)')
       addTeacherDesk(room)
       addGrid(room, 'island', 3, 2, 80, 40, 170)
-      return room
+      return addBoardAndDoor(room)
     },
   },
   {
@@ -118,7 +177,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
       const room = emptyRoom('Salle (tables individuelles)')
       addTeacherDesk(room)
       addGrid(room, 'single', 6, 5, 20, 24, 160)
-      return room
+      return addBoardAndDoor(room)
     },
   },
   {
@@ -133,7 +192,7 @@ export const ROOM_TEMPLATES: RoomTemplate[] = [
         room.furniture.push(createAtFootprint('single', 1400 - 80 - 92, 160 + i * 108, 270))
       }
       for (let i = 0; i < 8; i++) room.furniture.push(createAtFootprint('single', 188 + i * 108, 790, 0))
-      return room
+      return addBoardAndDoor(room)
     },
   },
   {

@@ -1,10 +1,115 @@
 import { describe, expect, it } from 'vitest'
 import { randomLights } from './demo'
-import { footprint, roomSeats, seatCenter, snap } from './geometry'
+import { footprint, seatBack, roomSeats, seatCenter, snap } from './geometry'
 import { relation } from './analysis'
-import { assign, fillRandomly, purgeAssignments, purgeRules, transposeAssignments } from './plan'
-import { createFurniture, findRoomTemplate, ROOM_TEMPLATES } from './rooms'
+import { assign, fillRandomly, lookoutSeats, purgeAssignments, purgeRules, transposeAssignments } from './plan'
+import { createFurniture, createFurnitureIn, findRoomTemplate, isWallItem, ROOM_TEMPLATES } from './rooms'
 import { newSchoolClass, normalizePlan, normalizeStudent, type Plan, type Student } from './types'
+
+describe('seat orientation', () => {
+  const back = (type: Parameters<typeof createFurniture>[0], rotation: 0 | 90 | 180 | 270, seatIndex = 0) => {
+    const f = createFurniture(type, 0, 0, rotation)
+    const { x, y } = seatBack(f, f.seats[seatIndex])
+    return [Math.round(x), Math.round(y)]
+  }
+
+  it('seats students on the south side of an unrotated table', () => {
+    expect(back('single', 0)).toEqual([0, 1])
+    expect(back('double', 0, 0)).toEqual([0, 1])
+    expect(back('double', 0, 1)).toEqual([0, 1])
+  })
+
+  it('seats the top row of an island on its north side and the bottom row on its south side', () => {
+    expect(back('island', 0, 0)).toEqual([0, -1]) // top left
+    expect(back('island', 0, 1)).toEqual([0, -1]) // top right
+    expect(back('island', 0, 2)).toEqual([0, 1]) // bottom left
+    expect(back('island', 0, 3)).toEqual([0, 1]) // bottom right
+  })
+
+  it('turns with the table', () => {
+    expect(back('single', 90)).toEqual([-1, 0])
+    expect(back('single', 180)).toEqual([0, -1])
+    expect(back('single', 270)).toEqual([1, 0])
+    expect(back('island', 90, 0)).toEqual([1, 0])
+  })
+})
+
+describe('lookoutSeats', () => {
+  const room = ROOM_TEMPLATES[0].create()
+  const schoolClass = newSchoolClass('A', 3)
+  const seats = roomSeats(room)
+
+  it('numbers every seat of a bare room', () => {
+    const list = lookoutSeats(room)
+    expect(list).toHaveLength(seats.length)
+    expect(list[0]).toEqual({ id: seats[0].seatId, label: 'Place 1' })
+  })
+
+  it('lists only the occupied seats of a plan, by student name', () => {
+    const [first, second] = schoolClass.students
+    const plan = {
+      assignments: { [seats[4].seatId]: first.id, [seats[1].seatId]: second.id },
+    } as unknown as Plan
+    const list = lookoutSeats(room, plan, schoolClass)
+    expect(list.map((s) => s.id)).toEqual([seats[1].seatId, seats[4].seatId])
+    expect(list[0].label).toBe(`${second.firstName} ${second.lastName}`.trim())
+  })
+})
+
+describe('wall items', () => {
+  const room = ROOM_TEMPLATES[0].create()
+  const inside = (f: ReturnType<typeof createFurniture>) => {
+    const r = footprint(f)
+    return r.x >= 0 && r.y >= 0 && r.x + r.w <= room.width && r.y + r.h <= room.height
+  }
+
+  it('has no seats, so they never count as places', () => {
+    for (const type of ['door', 'window', 'board', 'whiteboard'] as const) {
+      expect(isWallItem(type)).toBe(true)
+      expect(createFurniture(type, 0, 0).seats).toEqual([])
+    }
+    expect(isWallItem('double')).toBe(false)
+  })
+
+  it('puts the board on the front wall, the door on the back wall and windows on the left wall', () => {
+    const empty = { ...room, furniture: [] }
+    expect(footprint(createFurnitureIn(empty, 'board')).y).toBe(0)
+    expect(footprint(createFurnitureIn(empty, 'whiteboard')).y).toBe(0)
+    const door = footprint(createFurnitureIn(empty, 'door'))
+    expect(door.y + door.h).toBe(room.height)
+    expect(footprint(createFurnitureIn(empty, 'window')).x).toBe(0)
+    expect(inside(createFurnitureIn(empty, 'window'))).toBe(true)
+  })
+
+  it('slides a door along the back wall and still places it when the wall is full', () => {
+    const empty = { ...room, furniture: [] }
+    const first = createFurnitureIn(empty, 'door')
+    const second = createFurnitureIn({ ...empty, furniture: [first] }, 'door')
+    const [a, b] = [footprint(first), footprint(second)]
+    expect(a.x + a.w <= b.x || b.x + b.w <= a.x).toBe(true)
+    expect(b.y + b.h).toBe(room.height)
+
+    const crowded = { ...empty, furniture: Array.from({ length: 30 }, () => createFurnitureIn(empty, 'door')) }
+    expect(footprint(createFurnitureIn(crowded, 'door')).y + 24).toBe(room.height)
+  })
+
+  it('slides along the wall when the spot is taken', () => {
+    const empty = { ...room, furniture: [] }
+    const first = createFurnitureIn(empty, 'window')
+    const second = createFurnitureIn({ ...empty, furniture: [first] }, 'window')
+    const [a, b] = [footprint(first), footprint(second)]
+    expect(a.y + a.h <= b.y || b.y + b.h <= a.y).toBe(true)
+    expect(b.x).toBe(0)
+  })
+
+  it('every room template has a board and a door', () => {
+    for (const { create } of ROOM_TEMPLATES.filter((t) => t.key !== 'empty')) {
+      const types = create().furniture.map((f) => f.type)
+      expect(types).toContain('board')
+      expect(types).toContain('door')
+    }
+  })
+})
 
 describe('geometry', () => {
   it('footprint: a 90° rotation swaps width and height around the centre', () => {

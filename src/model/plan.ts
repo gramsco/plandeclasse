@@ -1,6 +1,6 @@
 import { relation, type Relation } from './analysis'
 import { roomSeats } from './geometry'
-import { isAesh, type Plan, type Room, type Rule, type SchoolClass, type Student } from './types'
+import { fullName, isAesh, type Plan, type Room, type Rule, type SchoolClass, type Student } from './types'
 
 /** Drops assignments that became invalid (seat or student gone, duplicate student). */
 export function purgeAssignments(plan: Plan, schoolClass: SchoolClass | undefined, room: Room | undefined) {
@@ -160,5 +160,20 @@ export function purgeRules(rules: Rule[], schoolClass: SchoolClass | undefined):
     if (r.type === 'separate') return ids.has(r.studentA) && ids.has(r.studentB) ? [r] : []
     if (r.type === 'influence') return ids.has(r.student) && ids.has(r.near) ? [r] : []
     return [r]
+  })
+}
+
+export type LookoutSeat = { id: string; label: string }
+
+/**
+ * The seats one can look from in 3D: the occupied ones, labelled with their student, in a plan;
+ * every seat, numbered, in a bare room.
+ */
+export function lookoutSeats(room: Room, plan?: Plan, schoolClass?: SchoolClass): LookoutSeat[] {
+  const students = new Map((schoolClass?.students ?? []).map((s) => [s.id, s]))
+  return roomSeats(room).flatMap((seat, index) => {
+    if (!plan) return [{ id: seat.seatId, label: `Place ${index + 1}` }]
+    const student = students.get(plan.assignments[seat.seatId] ?? '')
+    return student ? [{ id: seat.seatId, label: fullName(student) }] : []
   })
 }

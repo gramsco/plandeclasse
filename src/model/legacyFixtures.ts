@@ -179,3 +179,31 @@ export const LEGACY_V6 = {
     },
   ],
 }
+
+/** Data version 7: students have a `note`; rooms only know tables and the teacher's desk. */
+export const LEGACY_V7 = {
+  ...LEGACY_V6,
+  classes: LEGACY_V6.classes.map((c) => ({ ...c, students: c.students.map((s) => ({ ...s, note: '' })) })),
+  rooms: [
+    {
+      id: 's1',
+      name: 'Salle 12',
+      width: 1200,
+      height: 800,
+      grid: 10,
+      furniture: [
+        {
+          id: 'm1',
+          type: 'island',
+          x: 10,
+          y: 20,
+          rotation: 90,
+          width: 200,
+          height: 184,
+          seats: [{ id: 'p1', dx: 1, dy: 2 }],
+        },
+        { id: 'm2', type: 'teacher', x: 500, y: 40, rotation: 0, width: 180, height: 70, seats: [] },
+      ],
+    },
+  ],
+}

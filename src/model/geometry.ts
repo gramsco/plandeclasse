@@ -33,6 +33,29 @@ export function seatCenter(f: Furniture, seat: { dx: number; dy: number }) {
   }
 }
 
+/** Distance, from the middle of a seat, to the edge of the table on the side where the student sits. */
+const SEAT_TO_EDGE = 46
+/** The small chair drawn in the room editor on the side where the student sits. */
+export const SEAT_MARK = { w: 44, d: 16 }
+
+/**
+ * Unit vector, in room coordinates, from a seat towards the side where its student sits (facing the table).
+ * Students sit on the south side of an unrotated table, except the top row of an island, who sit on the north side.
+ */
+export function seatBack(f: Furniture, seat: { dx: number; dy: number }) {
+  const from = seatCenter(f, seat)
+  const to = seatCenter(f, { dx: seat.dx, dy: seat.dy + (seat.dy < 0 ? -1 : 1) })
+  return { x: to.x - from.x, y: to.y - from.y }
+}
+
+/** Where the student of a seat sits, just outside the table: the middle of its chair mark. */
+export function seatMarkCenter(f: Furniture, seat: { dx: number; dy: number }) {
+  const c = seatCenter(f, seat)
+  const back = seatBack(f, seat)
+  const distance = SEAT_TO_EDGE + 2 + SEAT_MARK.d / 2
+  return { x: c.x + back.x * distance, y: c.y + back.y * distance, back }
+}
+
 export type RoomSeat = { seatId: string; furnitureId: string; x: number; y: number; rotation: number }
 
 /** Every seat of the room, in reading order (top to bottom, left to right). */

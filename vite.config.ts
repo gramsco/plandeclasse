@@ -40,6 +40,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        // The 3D view (three.js) is only downloaded on first use, then cached for offline use: it must not weigh on installs.
+        globIgnores: ['**/Scene3D-*.js'],
+        runtimeCaching: [{ urlPattern: /\/assets\/Scene3D-.*\.js$/, handler: 'CacheFirst' }],
       },
     }),
   ],

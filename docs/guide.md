@@ -135,9 +135,11 @@ Un AESH se place comme un élève, sur une place libre ou sur une « chaise d'ad
 
 Onglet **Salles**. La liste des salles est à gauche, comme pour les classes et les plans. Vous y créez et modifiez les salles ; un plan se contente de les utiliser.
 
-- **Ajouter** une table individuelle, une table double, un îlot de 4, une chaise d'adulte ou le bureau du prof.
+- **Ajouter** une table individuelle, une table double, un îlot de 4, une chaise d'adulte, le bureau du prof, ou le décor de la salle : une **porte**, une **fenêtre** et un **tableau** (noir ou blanc). Ils se placent d'eux-mêmes contre un mur et se déplacent comme les tables ; ils n'ont pas de places.
+- **Aperçu 3D** : le bouton au-dessus de la salle montre la pièce en 3D, avec son décor, pour vérifier la disposition.
 - **Déplacer** en glissant. Les tables s'aimantent entre elles et à la grille ; gardez **Alt** enfoncé pour les placer librement.
 - **Pivoter** (touche R), **dupliquer**, **supprimer**.
+- Un **petit siège** est dessiné à côté de chaque place : il montre de quel côté s'assoit l'élève (il regarde la table). Il suit la table quand vous la pivotez. Il n'apparaît que dans cet onglet, pas sur le plan ni à l'impression.
 - Sur les tables doubles et les îlots, un **trait** sépare les places : ce sont en réalité des tables individuelles regroupées.
 - La taille de la salle se règle en bas du panneau.
 
@@ -174,6 +176,17 @@ Les personnes déjà placées ne bougent pas.
 **Cliquez** sur un élève (sur le plan ou dans « À placer ») sans le déplacer : sa fiche s'ouvre en haut du menu de gauche. Vous pouvez y tout modifier sans changer de page : photo (un clic dessus), prénom, nom, genre, délégué ou suppléant, feu tricolore, annotations et note ; ou le retirer de sa place. Ces changements concernent la classe, donc tous ses plans.
 
 ![Fiche d'un élève sur le plan](img/04b-fiche-eleve.png)
+
+### Voir la salle en 3D
+
+Le bouton **Vue 3D** (menu de gauche du plan) montre la classe en trois dimensions : chaque élève est représenté à sa place par un pion de la couleur de son feu, avec sa photo et son nom au-dessus. Le tableau porte un exemple de texte écrit à la main, le même sur le tableau noir et sur le tableau blanc.
+
+- **Vue du bureau** : vous êtes au bureau du prof et vous regardez la classe. Glissez pour regarder autour de vous.
+- **Vue élève** : choisissez un élève dans la liste « Place de » et regardez la classe depuis sa place, tournée vers le tableau. Pratique pour vérifier qui voit mal le tableau ou qui est caché derrière un autre. Glissez pour regarder autour de vous. Dans l'aperçu 3D d'une salle, la liste propose les places numérotées.
+- **Vue libre** : tournez autour de la salle (glisser), zoomez (molette) et déplacez-vous (clic droit).
+- **Plein écran** : pour projeter la vue ou la regarder en grand ; Échap pour en sortir.
+
+La vue 3D est en lecture seule : on place toujours les élèves sur le plan en 2D. Elle ne se charge que lorsque vous l'ouvrez : la toute première ouverture demande une connexion Internet (pour télécharger la vue), ensuite elle fonctionne hors ligne. Elle demande aussi que le navigateur autorise WebGL ; sinon un message l'indique et le reste de l'application n'est pas touché.
 
 ### Appliquer un plan à une autre salle
 

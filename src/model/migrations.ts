@@ -10,8 +10,9 @@
  *  5: V4 — students can be deputy class representatives (`deputy`)
  *  6: rules of type `together` (older releases would silently drop them)
  *  7: free-text `note` on students
+ *  8: furniture of type `door`, `window`, `board` and `whiteboard` (older releases would take them for tables)
  */
-export const DATA_VERSION = 7
+export const DATA_VERSION = 8
 
 /** Data as read from storage or from a file, in whatever shape its version used. */
 export type RawData = {
@@ -157,6 +158,9 @@ const MIGRATIONS: Record<number, (d: RawData) => RawData> = {
     rooms: d.rooms,
     plans: d.plans,
   }),
+
+  // Nothing to convert: the new furniture types only appear in rooms edited from now on.
+  7: (d) => d,
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
