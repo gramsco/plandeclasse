@@ -1,11 +1,9 @@
-import { useRef } from 'react'
 import { fullName, isAesh, type Student } from '../model/types'
 import { useApp } from '../store'
 import { TrafficLightPicker } from './TrafficLightPicker'
 import { AnnotationEditor } from './AnnotationEditor'
 import { GenderPicker } from './GenderPicker'
-import { resizePhoto } from '../storage/photo'
-import { NeutralAvatar } from './NeutralAvatar'
+import { PhotoButton } from './PhotoButton'
 
 /** One row per person, to change the same field of many students quickly. */
 export function StudentsTable({ students }: { students: Student[] }) {
@@ -101,42 +99,5 @@ export function StudentsTable({ students }: { students: Student[] }) {
         </tbody>
       </table>
     </div>
-  )
-}
-
-/** The photo of a row: a click opens the file picker (a photo can also be dropped on it). */
-function PhotoButton({ student, url }: { student: Student; url?: string }) {
-  const setPhoto = useApp((s) => s.setPhoto)
-  const input = useRef<HTMLInputElement>(null)
-  const receive = async (file?: File) => {
-    if (file?.type.startsWith('image/')) await setPhoto(student.id, await resizePhoto(file))
-  }
-  return (
-    <>
-      <button
-        type="button"
-        className="mini-avatar table-avatar photo-button"
-        aria-label={`Choisir une photo pour ${fullName(student) || 'cette personne'}`}
-        title="Choisir une photo (ou glisser un fichier)"
-        onClick={() => input.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault()
-          void receive(e.dataTransfer.files[0])
-        }}
-      >
-        {url ? <img src={url} alt="" /> : <NeutralAvatar />}
-      </button>
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          void receive(e.target.files?.[0])
-          e.target.value = ''
-        }}
-      />
-    </>
   )
 }

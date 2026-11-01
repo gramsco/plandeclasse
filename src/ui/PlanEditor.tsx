@@ -28,7 +28,10 @@ import {
 import { Crown, Dices, ICON, PanelLeftClose, PanelLeftOpen, Printer, TriangleAlert, X } from './icons'
 import { Modal } from './Modal'
 import { CrownShape, NeutralAvatarShapes } from './NeutralAvatar'
+import { AnnotationEditor } from './AnnotationEditor'
 import { askConfirm } from './ask'
+import { GenderPicker } from './GenderPicker'
+import { PhotoButton } from './PhotoButton'
 import { RoomSvg } from './RoomSvg'
 import { RulesPanel } from './RulesPanel'
 import { TrackingPanel } from './TrackingPanel'
@@ -543,28 +546,35 @@ type StudentDetailsProps = {
 
 /** Details and quick actions for the student clicked on the plan. Changes apply to the class, so to every plan. */
 function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: StudentDetailsProps) {
-  const { setDelegate, setDeputy, setLight, updateStudent } = useApp()
+  const { setDelegate, setDeputy, setLight, setGender, updateStudent } = useApp()
   const aesh = isAesh(student)
   return (
     <section className="student-details" aria-label={`Détails de ${fullName(student)}`}>
       <header>
-        <Avatar student={student} url={photoUrl} />
-        <strong>{fullName(student)}</strong>
+        <PhotoButton student={student} url={photoUrl} />
+        <span className="name-fields">
+          <input
+            aria-label="Prénom"
+            value={student.firstName}
+            onChange={(e) => updateStudent(student.id, { firstName: e.target.value })}
+          />
+          <input
+            aria-label="Nom"
+            value={student.lastName}
+            onChange={(e) => updateStudent(student.id, { lastName: e.target.value })}
+          />
+        </span>
         <button aria-label="Fermer les détails" onClick={onClose}>
           <X size={ICON} />
         </button>
       </header>
       <p className="hint">
-        {[
-          aesh ? 'AESH' : student.gender && GENDER_LABELS[student.gender],
-          ...student.annotations,
-          seated ? 'placé' : 'à placer',
-        ]
-          .filter(Boolean)
-          .join(' · ')}
+        {aesh && 'AESH · '}
+        {seated ? 'placé' : 'à placer'}
       </p>
       {!aesh && (
         <>
+          <GenderPicker value={student.gender} onChange={(gender) => setGender(student.id, gender)} />
           <div className="row">
             <button
               role="switch"
@@ -584,6 +594,7 @@ function StudentDetails({ student, photoUrl, seated, onUnseat, onClose }: Studen
             </button>
           </div>
           <TrafficLightPicker value={student.light} onChange={(light) => setLight(student.id, light)} />
+          <AnnotationEditor student={student} />
         </>
       )}
       <label className="note-field">

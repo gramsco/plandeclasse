@@ -171,7 +171,7 @@ Les personnes déjà placées ne bougent pas.
 
 ### Voir le détail d'un élève
 
-**Cliquez** sur un élève (sur le plan ou dans « À placer ») sans le déplacer : sa fiche s'ouvre en haut du menu de gauche. Vous y changez en un clic son statut de délégué ou de suppléant et son feu tricolore, ou vous le retirez de sa place. Ces changements concernent la classe, donc tous ses plans.
+**Cliquez** sur un élève (sur le plan ou dans « À placer ») sans le déplacer : sa fiche s'ouvre en haut du menu de gauche. Vous pouvez y tout modifier sans changer de page : photo (un clic dessus), prénom, nom, genre, délégué ou suppléant, feu tricolore, annotations et note ; ou le retirer de sa place. Ces changements concernent la classe, donc tous ses plans.
 
 ![Fiche d'un élève sur le plan](img/04b-fiche-eleve.png)
 

@@ -1623,3 +1623,20 @@ button > svg.lucide {
 .photo-button:hover {
   border-color: var(--accent);
 }
+
+/* Quick editing on the plan: the name fields sit next to the photo. */
+.student-details header .mini-avatar {
+  width: 44px;
+  height: 44px;
+}
+.student-details .name-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.student-details .name-fields input {
+  width: 100%;
+  min-width: 0;
+}
