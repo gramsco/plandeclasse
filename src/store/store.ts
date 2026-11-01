@@ -389,21 +389,12 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       setDelegate: (id, delegate) =>
         updateCurrentClass((c) => ({
           ...c,
-          // A class has a single delegate: naming a new one relieves the previous one.
-          students: c.students.map((s) =>
-            s.id === id
-              ? { ...s, delegate, deputy: delegate ? false : s.deputy }
-              : { ...s, delegate: delegate ? false : s.delegate },
-          ),
+          students: c.students.map((s) => (s.id === id ? { ...s, delegate, deputy: delegate ? false : s.deputy } : s)),
         })),
       setDeputy: (id, deputy) =>
         updateCurrentClass((c) => ({
           ...c,
-          students: c.students.map((s) =>
-            s.id === id
-              ? { ...s, deputy, delegate: deputy ? false : s.delegate }
-              : { ...s, deputy: deputy ? false : s.deputy },
-          ),
+          students: c.students.map((s) => (s.id === id ? { ...s, deputy, delegate: deputy ? false : s.delegate } : s)),
         })),
       setSupports: (aeshId, studentIds) =>
         updateCurrentClass((c) => ({

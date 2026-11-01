@@ -113,13 +113,13 @@ Les boutons **Photos fictives** et **Feux aléatoires**, rangés sous **Outils d
 
 ### Le tableau
 
-Le bouton **Tableau**, au-dessus des fiches, affiche la classe sous forme de tableau : une ligne par personne, avec prénom, nom, genre, feu, délégué, suppléant, annotations et note, tous modifiables directement : le feu et le genre se changent d'un clic. Il n'y a qu'**un délégué et un suppléant par classe** : en nommer un nouveau remplace le précédent. C'est le plus rapide pour renseigner toute une classe. Le choix est mémorisé.
+Le bouton **Tableau**, au-dessus des fiches, affiche la classe sous forme de tableau : une ligne par personne, avec prénom, nom, genre, feu, délégué, suppléant, annotations et note, tous modifiables directement : le feu et le genre se changent d'un clic. C'est le plus rapide pour renseigner toute une classe. Le choix est mémorisé.
 
 ![Le tableau des élèves](img/13-tableau.png)
 
 ### Notes et ordre des classes
 
-Dans la fiche d'un élève, le champ **Note** accepte du texte libre (allergie, remarque…). Elle se modifie aussi depuis le plan, en cliquant sur l'élève. Elle n'est **jamais dessinée ni imprimée** sur le plan : survolez simplement la fiche, ou l'élève sur le plan, pour la lire. Glissez les classes dans la liste de gauche pour les ranger dans l'ordre que vous voulez.
+Dans la fiche d'un élève, le champ **Note** accepte du texte libre (allergie, remarque…). Elle se modifie aussi depuis le plan, en cliquant sur l'élève. Elle n'est **jamais dessinée ni imprimée** sur le plan : survolez simplement la fiche, ou l'élève sur le plan, pour la lire. Glissez les classes dans la liste de gauche pour les ranger dans l'ordre que vous voulez : la liste des plans suit le même ordre.
 
 ### Les AESH
 

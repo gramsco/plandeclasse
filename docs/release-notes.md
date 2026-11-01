@@ -3,6 +3,14 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.9.1 — 2026-11-01
+
+- **Plusieurs délégués et suppléants** : la limite d'un seul par classe est retirée (classes regroupées), les cases se
+  cochent de nouveau librement.
+- **Plans rangés comme les classes** : la liste des plans suit l'ordre de vos classes (les plans de la classe 1 avant
+  ceux de la classe 2…).
+- **Suppression d'un élève confirmée** : l'application demande confirmation avant de supprimer un élève.
+
 ## 0.9.0 — 2026-10-26
 
 - **Nouvelle couleur** : l'application passe du vert à l'indigo. Les feux tricolores gardent leurs couleurs.

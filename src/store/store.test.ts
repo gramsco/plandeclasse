@@ -156,18 +156,19 @@ describe('plans and rooms', () => {
     expect(second.delegate).toBe(false)
   })
 
-  it('a class has a single delegate and a single deputy', async () => {
+  it('allows several delegates and deputies, as classes can be grouped', async () => {
     const { get } = await newStore()
-    get().addClass('A', 3)
-    const [first, second, third] = get().classes[0].students
+    get().addClass('A', 4)
+    const [first, second, third, fourth] = get().classes[0].students
     get().setDelegate(first.id, true)
     get().setDelegate(second.id, true)
     get().setDeputy(third.id, true)
-    get().setDeputy(first.id, true)
+    get().setDeputy(fourth.id, true)
     expect(get().classes[0].students.map((s) => [s.delegate, s.deputy])).toEqual([
-      [false, true],
       [true, false],
-      [false, false],
+      [true, false],
+      [false, true],
+      [false, true],
     ])
   })
 

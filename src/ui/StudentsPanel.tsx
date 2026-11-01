@@ -355,7 +355,16 @@ function StudentCard({ student, schoolClass }: { student: Student; schoolClass: 
                 Avatar au hasard
               </button>
               {photoUrl && <button onClick={() => removePhoto(student.id)}>Retirer la photo</button>}
-              <button className="danger" onClick={() => deleteStudent(student.id)}>
+              <button
+                className="danger"
+                onClick={async () => {
+                  const confirmed = await askConfirm(`Supprimer ${fullName(student) || 'cette personne'} ?`, {
+                    message: 'Sa photo, sa place dans les plans et ses règles seront aussi supprimées.',
+                    confirmLabel: 'Supprimer',
+                  })
+                  if (confirmed) deleteStudent(student.id)
+                }}
+              >
                 Supprimer
               </button>
             </div>

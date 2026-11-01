@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { sortPlansByClass } from '../model/order'
 import { PLAN_STATUS_LABELS } from '../model/types'
 import { useApp } from '../store'
 import { askConfirm, askText } from './ask'
@@ -54,7 +55,7 @@ export function PlansView() {
           label="Plans"
           currentId={currentPlanId}
           onSelect={selectPlan}
-          items={plans.map((p) => ({
+          items={sortPlansByClass(plans, classes).map((p) => ({
             id: p.id,
             label: p.status === 'adopted' ? `✓ ${p.name}` : p.name,
             detail: p.status === 'adopted' ? undefined : PLAN_STATUS_LABELS[p.status],

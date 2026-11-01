@@ -17,3 +17,12 @@ export function sortByIds<T extends { id: string }>(items: T[], ids: string[]): 
   }
   return [...items].sort((a, b) => rank(a) - rank(b))
 }
+
+/** Plans follow the order of their classes (stable: plans of the same class keep their own order). */
+export function sortPlansByClass<P extends { classId: string }>(plans: P[], classes: { id: string }[]): P[] {
+  const rank = (p: P) => {
+    const i = classes.findIndex((c) => c.id === p.classId)
+    return i < 0 ? classes.length : i
+  }
+  return [...plans].sort((a, b) => rank(a) - rank(b))
+}
