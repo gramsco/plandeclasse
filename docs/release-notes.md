@@ -3,6 +3,11 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.14.1 — 2026-11-01
+
+- **Plan lisible sur téléphone** : sur un petit écran, le menu de gauche passe au-dessus du plan au lieu de lui prendre
+  presque toute la place, et il est replié au départ (le bouton à l'icône ▶ le rouvre) : le plan occupe toute la largeur.
+
 ## 0.14.0 — 2026-11-01
 
 - **Installer vos classes sur un autre appareil** : « Synchroniser » → « Envoyer mes classes » affiche vos classes, avec

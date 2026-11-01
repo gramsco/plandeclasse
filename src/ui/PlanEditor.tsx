@@ -60,7 +60,11 @@ export function PlanEditor({ plan, schoolClass, room }: Props) {
   const [previewMode, setPreviewMode] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const [tab, setTab] = useState<SideTab>('place')
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === '1')
+  // On a phone the menu would push the plan out of sight: it starts collapsed, until the user chooses otherwise.
+  const [collapsed, setCollapsed] = useState(() => {
+    const stored = localStorage.getItem(COLLAPSED_KEY)
+    return stored === null ? (window.matchMedia?.('(max-width: 700px)').matches ?? false) : stored === '1'
+  })
   const [strategy, setStrategy] = useState<FillStrategy>('random')
   const [otherRoomId, setOtherRoomId] = useState('')
   const [hovered, setHovered] = useState<string[]>()

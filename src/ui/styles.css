@@ -1236,6 +1236,15 @@ footer .link-button {
   .desktop-only {
     display: none !important;
   }
+  /* The menu goes above the plan instead of beside it, which would leave the plan a few pixels wide. */
+  .editor,
+  .editor.side-collapsed {
+    grid-template-columns: 1fr;
+  }
+  .tools {
+    position: static;
+    max-height: none;
+  }
   .classes-layout {
     flex-direction: column;
   }

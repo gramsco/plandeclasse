@@ -159,7 +159,7 @@ Si vous modifiez une salle, les plans qui l'utilisent se mettent à jour. Les é
 
 ## Les plans : placer, vérifier, tester
 
-Onglet **Plans**. Le panneau de gauche a trois onglets : **Placer**, **Règles** et **Suivi**. Le bouton **« Masquer le menu »** le replie pour donner toute la largeur au plan (recliquez sur ▶ pour le rouvrir).
+Onglet **Plans**. Le panneau de gauche a trois onglets : **Placer**, **Règles** et **Suivi**. Le bouton **« Masquer le menu »** le replie pour donner toute la largeur au plan (recliquez sur ▶ pour le rouvrir). Sur téléphone, le menu s'affiche au-dessus du plan et il est replié au départ, pour que le plan occupe tout l'écran.
 
 ### Placer au hasard, ou presque
 
