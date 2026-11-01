@@ -43,6 +43,8 @@ function LinkSetup({
   const state = useLinkState(link)
   const [card, setCard] = useState<string>()
   const [scanning, setScanning] = useState(true)
+  // The first device shows its own code first: its camera only has to be seen once the other one displays an answer.
+  const [reading, setReading] = useState(role === 'join')
   const [error, setError] = useState<string>()
   const handled = useRef(false)
 
@@ -100,7 +102,7 @@ function LinkSetup({
       {role === 'start' ? (
         <p>
           {card && !connecting
-            ? "Sur l'autre appareil : Synchroniser → Connexion directe → Rejoindre, puis visez ce code. L'autre appareil affichera alors son code : présentez-le à la caméra ci-dessous."
+            ? "Sur l'autre appareil : Synchroniser → Connexion directe → Rejoindre, puis visez ce code. L'autre appareil affichera alors son code : appuyez sur « Lire son code » et présentez-le à la caméra."
             : connecting
               ? 'Connexion en cours…'
               : 'Démarrage de la caméra…'}
@@ -118,9 +120,22 @@ function LinkSetup({
           <QrSvg text={card} label="Code de connexion" />
         </div>
       )}
-      <video ref={video} className="sync-video" hidden={!scanning} muted playsInline aria-label="Image de la caméra" />
+      {/* Kept running but out of sight rather than hidden: browsers may stop decoding a hidden video. */}
+      <video
+        ref={video}
+        className={scanning && reading ? 'sync-video' : 'sync-video-off'}
+        muted
+        playsInline
+        aria-hidden={!(scanning && reading)}
+        aria-label="Image de la caméra"
+      />
       <div className="form-actions">
         <button onClick={onCancel}>Annuler</button>
+        {role === 'start' && scanning && card && !connecting && !reading && (
+          <button className="primary" onClick={() => setReading(true)}>
+            Lire son code
+          </button>
+        )}
       </div>
     </>
   )

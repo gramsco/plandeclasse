@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { fileOf, readFile } from '../io/file'
+import { fileOf, readFile, type ExportFile } from '../io/file'
 import {
   bundleOf,
   diffPatch,
@@ -33,7 +33,7 @@ const describe = (change: Change) =>
 
 type Stage =
   | { name: 'review'; changes: Change[] }
-  | { name: 'review-classes'; items: Newcomer[] }
+  | { name: 'review-classes'; items: Newcomer[]; photos: ExportFile['photos'] }
   | { name: 'failed'; message: string }
   | { name: 'done'; count: number; what: string }
 
@@ -46,7 +46,10 @@ function inspect(text: string, local: Bundle): Stage {
     } catch {
       // not JSON: the parsers below report it
     }
-    if (format === 'classe') return { name: 'review-classes', items: newcomers(readFile(text), local) }
+    if (format === 'classe') {
+      const file = readFile(text)
+      return { name: 'review-classes', items: newcomers(file, local), photos: file.photos }
+    }
     return { name: 'review', changes: diffPatch(parsePatch(text), local.classes, local.plans) }
   } catch (e) {
     return { name: 'failed', message: (e as Error).message }
@@ -80,11 +83,15 @@ export function SyncReview({ text, onDone, onRetry }: { text: string; onDone(): 
     setStage({ name: 'done', count: accepted.length, what: 'modification(s) appliquée(s)' })
   }
 
-  const addClasses = async (items: Newcomer[]) => {
+  const addClasses = async (items: Newcomer[], photos: ExportFile['photos']) => {
     const accepted = items.filter((_, i) => chosen.has(i))
     // A device that starts from nothing has no edits to send yet: what it just received is not one.
     if (classes.length === 0 && !hasLastSync()) setLastSync(new Date().toISOString())
-    await importData(fileOf(bundleOf(accepted)), 'merge')
+    // Only the photos of the classes being added are kept.
+    const kept: ExportFile['photos'] = {}
+    for (const { schoolClass } of accepted)
+      for (const { photoId } of schoolClass.students) if (photoId && photos[photoId]) kept[photoId] = photos[photoId]
+    await importData(fileOf(bundleOf(accepted), kept), 'merge')
     setStage({ name: 'done', count: accepted.length, what: 'classe(s) ajoutée(s)' })
   }
 
@@ -116,7 +123,7 @@ export function SyncReview({ text, onDone, onRetry }: { text: string; onDone(): 
       </>
     )
   if (stage.name === 'review-classes') {
-    const { items } = stage
+    const { items, photos } = stage
     return items.length === 0 ? (
       <>
         <p>
@@ -145,7 +152,7 @@ export function SyncReview({ text, onDone, onRetry }: { text: string; onDone(): 
         </ul>
         <div className="form-actions">
           <button onClick={onDone}>Annuler</button>
-          <button className="primary" disabled={chosen.size === 0} onClick={() => void addClasses(items)}>
+          <button className="primary" disabled={chosen.size === 0} onClick={() => void addClasses(items, photos)}>
             Ajouter
           </button>
         </div>

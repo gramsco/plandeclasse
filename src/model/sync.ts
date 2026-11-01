@@ -172,12 +172,15 @@ export type Bundle = { classes: SchoolClass[]; rooms: Room[]; plans: Plan[] }
 
 /**
  * What to send to set up a new device with some classes: the classes, their plans and the rooms those
- * use. Photos are left out, so the students lose their `photoId` rather than point at nothing.
+ * use. Unless the photos travel too, the students lose their `photoId` rather than point at nothing.
  */
-export function selectBundle(data: Bundle, classIds: string[]): Bundle {
+export function selectBundle(data: Bundle, classIds: string[], keepPhotoIds = false): Bundle {
   const classes = data.classes
     .filter((c) => classIds.includes(c.id))
-    .map((c) => ({ ...c, students: c.students.map(({ photoId: _photo, ...student }) => student) }))
+    .map((c) => ({
+      ...c,
+      students: keepPhotoIds ? c.students : c.students.map(({ photoId: _photo, ...student }) => student),
+    }))
   const plans = data.plans.filter((p) => classIds.includes(p.classId))
   const roomIds = new Set(plans.map((p) => p.roomId))
   return { classes, plans, rooms: data.rooms.filter((r) => roomIds.has(r.id)) }

@@ -54,20 +54,23 @@ export async function buildFile(
   }
 }
 
-/** A `.classe` structure around data that travels without photos (QR transfer). */
-export function fileOf(bundle: Bundle): ExportFile {
+/** A `.classe` structure around data that travels without photos unless given some (QR transfer: none). */
+export function fileOf(bundle: Bundle, photos: ExportFile['photos'] = {}): ExportFile {
   return {
     format: FORMAT,
     version: FILE_VERSION,
     application: typeof __APP_VERSION__ === 'undefined' ? 'dev' : __APP_VERSION__,
     exportedAt: new Date().toISOString(),
     ...bundle,
-    photos: {},
+    photos,
   }
 }
 
-/** The chosen classes with their plans and rooms, ready to be shown as QR codes. */
-export const buildTransfer = (data: Bundle, classIds: string[]): ExportFile => fileOf(selectBundle(data, classIds))
+/** The chosen classes with their plans and rooms. Photos are too big for QR codes: they travel only if a storage is given. */
+export async function buildTransfer(data: Bundle, classIds: string[], photosFrom?: Storage): Promise<ExportFile> {
+  const bundle = selectBundle(data, classIds, photosFrom !== undefined)
+  return photosFrom ? buildFile(bundle, photosFrom) : fileOf(bundle)
+}
 
 /** Reads and validates a `.classe` file, migrating old formats. Throws a user-readable Error if invalid. */
 export function readFile(text: string): ExportFile {

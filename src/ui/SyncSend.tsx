@@ -4,7 +4,7 @@ import { encodePayload } from '../io/payloadCodec'
 import { splitFrames } from '../model/frames'
 import { buildPatch } from '../model/sync'
 import { newId } from '../model/types'
-import { useApp } from '../store'
+import { storage, useApp } from '../store'
 import { getLastSync, setLastSync } from './lastSync'
 import { QrSvg } from './QrSvg'
 
@@ -177,7 +177,10 @@ function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery?: Deli
     )
   return (
     <>
-      <p>Quelles classes envoyer ? Chaque classe prend quelques secondes à lire. Les photos ne sont pas envoyées.</p>
+      <p>
+        Quelles classes envoyer ? Chaque classe prend quelques secondes à lire.
+        {delivery ? '' : ' Les photos ne sont pas envoyées.'}
+      </p>
       <ul className="sync-changes">
         {classes.map((c) => (
           <li key={c.id}>
@@ -206,13 +209,14 @@ function SyncSendClasses({ onDone, delivery }: { onDone(): void; delivery?: Deli
           disabled={chosen.size === 0 || busy}
           onClick={() => {
             setBusy(true)
-            const transfer = buildTransfer({ classes, rooms, plans }, [...chosen])
+            // A direct connection has room for the photos; QR codes do not.
+            const transfer = buildTransfer({ classes, rooms, plans }, [...chosen], delivery ? storage : undefined)
             if (delivery)
-              delivery.send(transfer).then(
+              transfer.then(delivery.send).then(
                 () => setOutcome({ kind: 'sent' }),
                 (e: Error) => setOutcome({ kind: 'failed', message: e.message }),
               )
-            else void toFrames(transfer).then(setFrames)
+            else void transfer.then(toFrames).then(setFrames)
           }}
         >
           {delivery ? 'Envoyer' : 'Afficher le code'}
@@ -243,7 +247,8 @@ export function SyncSend({
       <p>{lead}</p>
       <ul className="sync-menu">
         <li>
-          <strong>Mes classes</strong> : pour installer vos classes sur un nouvel appareil (sans les photos).
+          <strong>Mes classes</strong> : pour installer vos classes sur un nouvel appareil (les photos ne passent que
+          par la connexion directe).
         </li>
         <li>
           <strong>Mes modifications</strong> : pour reporter ce qui a changé depuis la dernière synchronisation.

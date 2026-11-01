@@ -269,7 +269,7 @@ Vous pouvez installer vos classes sur votre téléphone, les ajuster sans connex
 2. Sur le **téléphone**, cliquez sur **Synchroniser** → **Recevoir** et autorisez la caméra. Visez l'écran de l'ordinateur et gardez-le en face jusqu'à la fin de la lecture (une classe prend une dizaine de secondes : le code change tout seul).
 3. Le téléphone liste les classes reçues : cochez celles à ajouter, puis **Ajouter**.
 
-Les classes arrivent avec leurs plans et leurs salles, **sans les photos**. Pour les photos, passez par un export `.classe`.
+Les classes arrivent avec leurs plans et leurs salles, **sans les photos** (trop lourdes pour des codes QR). Pour les photos, utilisez la connexion directe ci-dessous ou un export `.classe`.
 
 **Ensuite : reporter les modifications du téléphone sur l'ordinateur**
 
@@ -293,8 +293,8 @@ Si les deux appareils sont sur le **même réseau Wi-Fi** (ou si l'un utilise le
 
 1. Sur le premier appareil, cliquez sur **Synchroniser** → **Connexion directe** → **Commencer** et autorisez la caméra. Un code s'affiche.
 2. Sur le second, **Synchroniser** → **Connexion directe** → **Rejoindre**, et visez ce code. Le second affiche alors son propre code.
-3. Présentez-le à la caméra du premier. Les deux appareils indiquent « Connecté ».
-4. Chacun peut alors envoyer **Mes classes** ou **Mes modifications**. Ce que l'autre vous envoie s'affiche, et vous cochez ce qu'il faut appliquer, exactement comme avec les codes QR.
+3. Sur le premier, appuyez sur **Lire son code** et présentez-le à la caméra (l'image de la caméra n'apparaît qu'à ce moment-là). Les deux appareils indiquent « Connecté ».
+4. Chacun peut alors envoyer **Mes classes** (photos comprises) ou **Mes modifications**. Ce que l'autre vous envoie s'affiche, et vous cochez ce qu'il faut appliquer, exactement comme avec les codes QR.
 
 Les codes ne servent qu'à présenter les appareils l'un à l'autre. Ensuite, les données passent **directement de l'un à l'autre, sur votre réseau local**, chiffrées, sans serveur, sans compte et sans Internet. La connexion s'arrête quand vous fermez la fenêtre.
 

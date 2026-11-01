@@ -1751,6 +1751,14 @@ button > svg.lucide {
   background: #000;
   border-radius: var(--radius-sm);
 }
+/* The camera keeps running, but nothing of it shows until there is a code to read. */
+.sync-video-off {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
 .sync-changes {
   list-style: none;
   padding: 0;

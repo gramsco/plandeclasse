@@ -3,11 +3,15 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
-## À venir
+## 0.16.0 — 2026-11-01
 
 - **Synchroniser, plus simple** : la fenêtre ne propose plus que « Envoyer », « Recevoir » et « Connexion directe ».
   Le choix entre vos classes et vos modifications se fait ensuite, de la même façon avec les codes QR ou en connexion
   directe.
+- **Photos par la connexion directe** : « Mes classes » envoie désormais aussi les photos des élèves. Les codes QR
+  restent sans photos.
+- **Caméra discrète** : en connexion directe, le premier appareil n'affiche plus l'image de la caméra tant qu'il n'a pas
+  de code à lire (bouton « Lire son code »).
 
 ## 0.15.1 — 2026-11-01
 
