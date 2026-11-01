@@ -185,6 +185,11 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       const { currentClassId } = get()
       if (currentClassId) updateClass(currentClassId, fn)
     }
+    // A plan shows the students of its own class, which is not always the one selected in the classes view.
+    const updateClassOf = (studentId: string, fn: (c: SchoolClass) => SchoolClass) => {
+      const owner = get().classes.find((c) => c.students.some((s) => s.id === studentId))
+      if (owner) updateClass(owner.id, fn)
+    }
 
     const loadPhotoUrl = async (photoId: string) => {
       if (get().photoUrls[photoId]) return
@@ -364,11 +369,11 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       addStudent: (firstName, lastName) => get().addStudents([newStudent(firstName, lastName)]),
       addAesh: (firstName, lastName) => get().addStudents([newAesh(firstName, lastName)]),
       setLight: (id, light) =>
-        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, light } : s)) })),
+        updateClassOf(id, (c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, light } : s)) })),
       toggleAnnotation: (id, label) => {
         const trimmed = label.trim()
         if (!trimmed) return
-        updateCurrentClass((c) => ({
+        updateClassOf(id, (c) => ({
           ...c,
           students: c.students.map((s) =>
             s.id !== id
@@ -384,29 +389,29 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
       },
       shuffleLights: () => updateCurrentClass((c) => ({ ...c, students: shuffleLights(c.students) })),
       setGender: (id, gender) =>
-        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, gender } : s)) })),
+        updateClassOf(id, (c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, gender } : s)) })),
       // Delegate and deputy exclude each other: one student cannot hold both crowns.
       setDelegate: (id, delegate) =>
-        updateCurrentClass((c) => ({
+        updateClassOf(id, (c) => ({
           ...c,
           students: c.students.map((s) => (s.id === id ? { ...s, delegate, deputy: delegate ? false : s.deputy } : s)),
         })),
       setDeputy: (id, deputy) =>
-        updateCurrentClass((c) => ({
+        updateClassOf(id, (c) => ({
           ...c,
           students: c.students.map((s) => (s.id === id ? { ...s, deputy, delegate: deputy ? false : s.delegate } : s)),
         })),
       setSupports: (aeshId, studentIds) =>
-        updateCurrentClass((c) => ({
+        updateClassOf(aeshId, (c) => ({
           ...c,
           students: c.students.map((s) => (s.id === aeshId ? { ...s, supports: studentIds } : s)),
         })),
       updateStudent: (id, patch) =>
-        updateCurrentClass((c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
+        updateClassOf(id, (c) => ({ ...c, students: c.students.map((s) => (s.id === id ? { ...s, ...patch } : s)) })),
 
       deleteStudent(id) {
         deletePhotos([studentById(id)?.photoId])
-        updateCurrentClass((c) => ({
+        updateClassOf(id, (c) => ({
           ...c,
           students: c.students
             .filter((s) => s.id !== id)
@@ -420,7 +425,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
         await storage.putPhoto(photoId, blob)
         set((s) => ({ photoUrls: { ...s.photoUrls, [photoId]: URL.createObjectURL(blob) } }))
         deletePhotos([previous])
-        updateCurrentClass((c) => ({
+        updateClassOf(studentId, (c) => ({
           ...c,
           students: c.students.map((s) => (s.id === studentId ? { ...s, photoId } : s)),
         }))
@@ -428,7 +433,7 @@ export function createAppStore(storage: Storage, debounceMs = 300) {
 
       removePhoto(studentId) {
         deletePhotos([studentById(studentId)?.photoId])
-        updateCurrentClass((c) => ({
+        updateClassOf(studentId, (c) => ({
           ...c,
           students: c.students.map((s) => (s.id === studentId ? { ...s, photoId: undefined } : s)),
         }))

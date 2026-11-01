@@ -3,6 +3,12 @@
 Ce qui change pour vous, version après version. Vos données restent sur votre ordinateur : pensez à exporter une
 sauvegarde avant de mettre à jour.
 
+## 0.10.1 — 2026-11-01
+
+- **Élèves modifiables depuis tous les plans** : quand une autre classe était sélectionnée dans l'onglet Classes, la
+  fiche d'un élève sur le plan ne modifiait rien. Les modifications (nom, photo, feu, annotations, délégué…)
+  s'appliquent maintenant toujours à la classe du plan.
+
 ## 0.10.0 — 2026-11-01
 
 - **Édition rapide sur le plan** : la fiche qui s'ouvre en cliquant un élève sur le plan permet maintenant de tout

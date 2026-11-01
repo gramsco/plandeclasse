@@ -45,6 +45,25 @@ describe('students and classes', () => {
     expect(get().classes[0].students[0].note).toBe('Sits near the window')
   })
 
+  it('edits a student of another class than the selected one', async () => {
+    const { get } = await newStore()
+    const first = get().addClass('A', 1)
+    get().addClass('B', 1)
+    const student = get().classes.find((c) => c.id === first)!.students[0]
+    expect(get().currentClassId).not.toBe(first)
+
+    get().updateStudent(student.id, { note: 'Sits near the window' })
+    get().setLight(student.id, 'red')
+    get().setDelegate(student.id, true)
+    get().toggleAnnotation(student.id, 'DYS')
+    get().setGender(student.id, 'girl')
+
+    const edited = get().classes.find((c) => c.id === first)!.students[0]
+    expect(edited).toMatchObject({ note: 'Sits near the window', light: 'red', delegate: true, gender: 'girl' })
+    expect(edited.annotations).toContain('DYS')
+    expect(get().classes.find((c) => c.id !== first)!.students[0].note).toBe('')
+  })
+
   it('deletes photos with the student and persists changes', async () => {
     const { storage, get } = await newStore()
     get().addClass('6e A')
